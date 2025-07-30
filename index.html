@@ -30,9 +30,10 @@
             color: var(--text-primary);
             overflow-x: hidden;
             line-height: 1.6;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* Animated Background Grid */
+        /* Animated Background Grid - Reduced on mobile */
         .bg-grid {
             position: fixed;
             top: 0;
@@ -52,7 +53,21 @@
             100% { transform: translate(50px, 50px); }
         }
 
-        /* Particle Animation */
+        /* Reduce animations on mobile for performance */
+        @media (max-width: 768px) {
+            .bg-grid {
+                animation-duration: 40s;
+                opacity: 0.5;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bg-grid {
+                animation: none;
+            }
+        }
+
+        /* Particle Animation - Reduced count on mobile */
         .particles {
             position: fixed;
             top: 0;
@@ -200,6 +215,8 @@
             position: relative;
             overflow: hidden;
             backdrop-filter: blur(10px);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .project-card::before {
@@ -213,11 +230,16 @@
             transition: left 0.5s ease;
         }
 
-        .project-card:hover::before {
+        /* Touch-friendly hover alternatives */
+        .project-card:hover::before,
+        .project-card:focus::before,
+        .project-card:active::before {
             left: 100%;
         }
 
-        .project-card:hover {
+        .project-card:hover,
+        .project-card:focus,
+        .project-card:active {
             transform: translateY(-10px) scale(1.02);
             border-color: var(--neon-blue);
             box-shadow: 
@@ -265,6 +287,7 @@
             justify-content: center;
             gap: 30px;
             margin-top: 40px;
+            flex-wrap: wrap;
         }
 
         .social-link {
@@ -282,6 +305,7 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .social-link::before {
@@ -296,12 +320,16 @@
             transition: all 0.3s ease;
         }
 
-        .social-link:hover::before {
+        .social-link:hover::before,
+        .social-link:focus::before,
+        .social-link:active::before {
             width: 100px;
             height: 100px;
         }
 
-        .social-link:hover {
+        .social-link:hover,
+        .social-link:focus,
+        .social-link:active {
             transform: translateY(-5px) scale(1.1);
             border-color: var(--neon-blue);
             box-shadow: 0 15px 30px rgba(0, 255, 255, 0.3), 0 0 30px var(--neon-blue);
@@ -313,7 +341,7 @@
             z-index: 1;
         }
 
-        /* Responsive Design */
+        /* Enhanced Mobile Responsive Design */
         @media (max-width: 768px) {
             .container {
                 padding: 0 15px;
@@ -326,6 +354,7 @@
             .tagline h2 {
                 white-space: normal;
                 border-right: none;
+                animation: fadeInUp 1s ease forwards;
             }
 
             .tagline-words {
@@ -334,9 +363,23 @@
                 gap: 15px;
             }
 
+            .projects {
+                padding: 60px 0;
+            }
+
             .projects-grid {
                 grid-template-columns: 1fr;
                 gap: 20px;
+            }
+
+            .project-card {
+                padding: 25px;
+                /* Enhance touch targets on mobile */
+                min-height: 200px;
+            }
+
+            .contact {
+                padding: 60px 0;
             }
 
             .social-links {
@@ -344,9 +387,47 @@
             }
 
             .social-link {
+                width: 70px;
+                height: 70px;
+                font-size: 1.8rem;
+            }
+
+            /* Reduce animation intensity on mobile */
+            .logo {
+                animation-duration: 4s;
+            }
+
+            .word {
+                animation-duration: 4s;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            .tagline {
+                padding: 40px 0;
+            }
+
+            .projects {
+                padding: 40px 0;
+            }
+
+            .contact {
+                padding: 40px 0;
+            }
+
+            .project-card {
+                padding: 20px;
+            }
+
+            .social-link {
                 width: 60px;
                 height: 60px;
                 font-size: 1.5rem;
+            }
+
+            .social-links {
+                gap: 15px;
             }
         }
 
@@ -366,6 +447,40 @@
             to {
                 opacity: 1;
                 transform: translateY(0);
+            }
+        }
+
+        /* Accessibility improvements */
+        .project-card:focus,
+        .social-link:focus {
+            outline: 2px solid var(--neon-blue);
+            outline-offset: 2px;
+        }
+
+        /* Reduced motion preferences */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+            
+            .bg-grid {
+                animation: none;
+            }
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .project-card {
+                border-color: var(--neon-blue);
+                background: rgba(0, 0, 0, 0.8);
+            }
+            
+            .social-link {
+                border-color: var(--neon-blue);
+                background: rgba(0, 0, 0, 0.8);
             }
         }
     </style>
@@ -399,7 +514,7 @@
         <div class="container">
             <h2 class="section-title fade-in">Projects</h2>
             <div class="projects-grid">
-                <div class="project-card fade-in">
+                <div class="project-card fade-in" tabindex="0" role="button" aria-label="Neural Networks Project">
                     <h3>Neural Networks</h3>
                     <p>Advanced AI systems that push the boundaries of machine learning and deep neural architectures.</p>
                     <div class="tech-stack">
@@ -408,7 +523,7 @@
                         <span class="tech-tag">PyTorch</span>
                     </div>
                 </div>
-                <div class="project-card fade-in">
+                <div class="project-card fade-in" tabindex="0" role="button" aria-label="Quantum Computing Project">
                     <h3>Quantum Computing</h3>
                     <p>Exploring quantum algorithms and their applications in solving complex computational problems.</p>
                     <div class="tech-stack">
@@ -417,7 +532,7 @@
                         <span class="tech-tag">Q#</span>
                     </div>
                 </div>
-                <div class="project-card fade-in">
+                <div class="project-card fade-in" tabindex="0" role="button" aria-label="Cybersecurity Tools Project">
                     <h3>Cybersecurity Tools</h3>
                     <p>Next-generation security frameworks and penetration testing tools for the digital age.</p>
                     <div class="tech-stack">
@@ -426,7 +541,7 @@
                         <span class="tech-tag">Docker</span>
                     </div>
                 </div>
-                <div class="project-card fade-in">
+                <div class="project-card fade-in" tabindex="0" role="button" aria-label="Blockchain Protocol Project">
                     <h3>Blockchain Protocol</h3>
                     <p>Decentralized systems and smart contracts that redefine digital trust and transparency.</p>
                     <div class="tech-stack">
@@ -435,7 +550,7 @@
                         <span class="tech-tag">IPFS</span>
                     </div>
                 </div>
-                <div class="project-card fade-in">
+                <div class="project-card fade-in" tabindex="0" role="button" aria-label="AR/VR Interface Project">
                     <h3>AR/VR Interface</h3>
                     <p>Immersive experiences that blend reality with digital innovation for next-gen interactions.</p>
                     <div class="tech-stack">
@@ -444,7 +559,7 @@
                         <span class="tech-tag">WebXR</span>
                     </div>
                 </div>
-                <div class="project-card fade-in">
+                <div class="project-card fade-in" tabindex="0" role="button" aria-label="IoT Ecosystem Project">
                     <h3>IoT Ecosystem</h3>
                     <p>Connected device networks that create intelligent environments and automated systems.</p>
                     <div class="tech-stack">
@@ -473,10 +588,11 @@
     </section>
 
     <script>
-        // Particle system
+        // Optimized particle system with mobile detection
         function createParticles() {
             const particlesContainer = document.getElementById('particles');
-            const particleCount = 50;
+            const isMobile = window.innerWidth <= 768;
+            const particleCount = isMobile ? 20 : 50; // Reduced particles on mobile
 
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
@@ -520,101 +636,74 @@
             });
         }
 
-        // Enhanced project card interactions
+        // Enhanced project card interactions with touch support
         function setupProjectCards() {
             const cards = document.querySelectorAll('.project-card');
             
             cards.forEach(card => {
+                // Mouse events for desktop
                 card.addEventListener('mouseenter', () => {
-                    // Add extra glow effect
-                    card.style.filter = 'brightness(1.1)';
+                    if (!('ontouchstart' in window)) {
+                        card.style.filter = 'brightness(1.1)';
+                    }
                 });
                 
                 card.addEventListener('mouseleave', () => {
-                    card.style.filter = 'brightness(1)';
+                    if (!('ontouchstart' in window)) {
+                        card.style.filter = 'brightness(1)';
+                    }
                 });
 
-                // Add click effect
+                // Touch events for mobile
+                card.addEventListener('touchstart', () => {
+                    card.style.filter = 'brightness(1.1)';
+                }, { passive: true });
+
+                card.addEventListener('touchend', () => {
+                    setTimeout(() => {
+                        card.style.filter = 'brightness(1)';
+                    }, 150);
+                }, { passive: true });
+
+                // Enhanced click/tap effect
                 card.addEventListener('click', () => {
                     card.style.transform = 'translateY(-10px) scale(0.98)';
                     setTimeout(() => {
                         card.style.transform = 'translateY(-10px) scale(1.02)';
                     }, 100);
                 });
-            });
-        }
 
-        // Smooth reveal animations
-        function setupRevealAnimations() {
-            const elements = document.querySelectorAll('.fade-in');
-            elements.forEach((el, index) => {
-                el.style.animationDelay = `${index * 0.1}s`;
-            });
-        }
-
-        // Mouse trail effect
-        function createMouseTrail() {
-            let trail = [];
-            const trailLength = 20;
-
-            document.addEventListener('mousemove', (e) => {
-                trail.push({ x: e.clientX, y: e.clientY });
-                
-                if (trail.length > trailLength) {
-                    trail.shift();
-                }
-
-                // Remove existing trail elements
-                document.querySelectorAll('.mouse-trail').forEach(el => el.remove());
-
-                // Create new trail elements
-                trail.forEach((point, index) => {
-                    const trailElement = document.createElement('div');
-                    trailElement.className = 'mouse-trail';
-                    trailElement.style.cssText = `
-                        position: fixed;
-                        left: ${point.x}px;
-                        top: ${point.y}px;
-                        width: ${6 - (index * 0.3)}px;
-                        height: ${6 - (index * 0.3)}px;
-                        background: var(--neon-blue);
-                        border-radius: 50%;
-                        pointer-events: none;
-                        z-index: 9999;
-                        opacity: ${(trailLength - index) / trailLength * 0.5};
-                        box-shadow: 0 0 10px var(--neon-blue);
-                        transform: translate(-50%, -50%);
-                        transition: opacity 0.1s ease;
-                    `;
-                    document.body.appendChild(trailElement);
-
-                    // Remove after animation
-                    setTimeout(() => {
-                        if (trailElement.parentNode) {
-                            trailElement.parentNode.removeChild(trailElement);
-                        }
-                    }, 100);
+                // Keyboard support
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        card.click();
+                    }
                 });
             });
         }
 
-        // Initialize everything when page loads
-        document.addEventListener('DOMContentLoaded', () => {
+        // Smooth reveal animations with performance optimization
+        function setupRevealAnimations() {
+            const elements = document.querySelectorAll('.fade-in');
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+            
+            if (!prefersReducedMotion.matches) {
+                elements.forEach((el, index) => {
+                    el.style.animationDelay = `${index * 0.1}s`;
+                });
+            }
+        }
+
+        // Optimized resize handler
+        function handleResize() {
+            // Recreate particles with appropriate count for new screen size
+            const particlesContainer = document.getElementById('particles');
+            particlesContainer.innerHTML = '';
             createParticles();
-            setupScrollAnimations();
-            setupProjectCards();
-            setupRevealAnimations();
-            createMouseTrail();
+        }
 
-            // Add initial loading animation
-            document.body.style.opacity = '0';
-            setTimeout(() => {
-                document.body.style.opacity = '1';
-                document.body.style.transition = 'opacity 1s ease';
-            }, 100);
-        });
-
-        // Performance optimization: Throttle mouse events
+        // Throttle function for performance
         function throttle(func, wait) {
             let timeout;
             return function executedFunction(...args) {
@@ -627,6 +716,24 @@
             };
         }
 
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            setupScrollAnimations();
+            setupProjectCards();
+            setupRevealAnimations();
+
+            // Add initial loading animation
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+                document.body.style.transition = 'opacity 1s ease';
+            }, 100);
+
+            // Add optimized resize listener
+            window.addEventListener('resize', throttle(handleResize, 250));
+        });
+
         // Add keyboard navigation
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowDown') {
@@ -635,6 +742,19 @@
                 window.scrollBy({ top: -100, behavior: 'smooth' });
             }
         });
+
+        // Handle orientation change on mobile
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                handleResize();
+            }, 100);
+        });
+
+        // Improve performance on low-end devices
+        if (navigator.hardwareConcurrency <= 2) {
+            // Reduce animation complexity for low-end devices
+            document.documentElement.style.setProperty('--reduced-animations', '1');
+        }
     </script>
 </body>
 </html>
