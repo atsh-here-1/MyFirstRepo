@@ -31,9 +31,11 @@
             overflow-x: hidden;
             line-height: 1.6;
             -webkit-overflow-scrolling: touch;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
-        /* Animated Background Grid - Reduced on mobile */
+        /* Animated Background Grid - Optimized */
         .bg-grid {
             position: fixed;
             top: 0;
@@ -57,7 +59,8 @@
         @media (max-width: 768px) {
             .bg-grid {
                 animation-duration: 40s;
-                opacity: 0.5;
+                opacity: 0.3;
+                background-size: 40px 40px;
             }
         }
 
@@ -67,7 +70,7 @@
             }
         }
 
-        /* Particle Animation - Reduced count on mobile */
+        /* Particle Animation - Optimized for mobile */
         .particles {
             position: fixed;
             top: 0;
@@ -85,7 +88,13 @@
             background: var(--neon-blue);
             border-radius: 50%;
             animation: float 6s ease-in-out infinite;
-            box-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        /* Remove particle glow on mobile for better performance */
+        @media (min-width: 769px) {
+            .particle {
+                box-shadow: 0 0 10px var(--neon-blue);
+            }
         }
 
         @keyframes float {
@@ -100,7 +109,7 @@
             padding: 0 20px;
         }
 
-        /* Header */
+        /* Header - Optimized for clarity */
         .header {
             text-align: center;
             padding: 80px 0 60px;
@@ -116,14 +125,31 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            animation: neonGlow 3s ease-in-out infinite alternate, gradientShift 4s ease-in-out infinite;
-            text-shadow: 0 0 30px var(--neon-blue);
+            animation: gradientShift 4s ease-in-out infinite;
             margin-bottom: 20px;
+            position: relative;
+            /* Desktop neon glow */
+            text-shadow: 0 0 20px var(--neon-blue), 0 0 40px var(--neon-blue);
+            filter: brightness(1.1);
         }
 
-        @keyframes neonGlow {
-            0% { filter: brightness(1) blur(0px); }
-            100% { filter: brightness(1.3) blur(1px); }
+        /* Mobile-optimized logo - Remove blur and heavy effects */
+        @media (max-width: 768px) {
+            .logo {
+                text-shadow: 0 0 10px var(--neon-blue);
+                filter: brightness(1);
+                /* Ensure crisp text rendering */
+                -webkit-text-stroke: 0.5px transparent;
+                text-rendering: optimizeLegibility;
+            }
+        }
+
+        /* Extra mobile optimization for very small screens */
+        @media (max-width: 480px) {
+            .logo {
+                text-shadow: 0 0 8px var(--neon-blue);
+                -webkit-text-stroke: 0px;
+            }
         }
 
         @keyframes gradientShift {
@@ -179,11 +205,31 @@
         .word:nth-child(3) { --delay: 2s; color: var(--neon-pink); }
 
         @keyframes wordGlow {
-            0%, 100% { text-shadow: 0 0 10px currentColor; transform: scale(1); }
-            50% { text-shadow: 0 0 20px currentColor, 0 0 30px currentColor; transform: scale(1.05); }
+            0%, 100% { 
+                text-shadow: 0 0 10px currentColor; 
+                transform: scale(1); 
+            }
+            50% { 
+                text-shadow: 0 0 15px currentColor; 
+                transform: scale(1.02); 
+            }
         }
 
-        /* Projects Section */
+        /* Mobile optimization for word glow */
+        @media (max-width: 768px) {
+            @keyframes wordGlow {
+                0%, 100% { 
+                    text-shadow: 0 0 5px currentColor; 
+                    transform: scale(1); 
+                }
+                50% { 
+                    text-shadow: 0 0 8px currentColor; 
+                    transform: scale(1.01); 
+                }
+            }
+        }
+
+        /* Projects Section - Optimized headings */
         .projects {
             padding: 80px 0;
         }
@@ -197,6 +243,50 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            position: relative;
+            /* Desktop glow effect */
+            filter: brightness(1.1);
+        }
+
+        /* Desktop section title glow */
+        @media (min-width: 769px) {
+            .section-title {
+                text-shadow: 0 0 20px var(--neon-blue);
+            }
+            
+            .section-title::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: inherit;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                filter: blur(1px);
+                opacity: 0.5;
+                z-index: -1;
+            }
+        }
+
+        /* Mobile section title - Clean and sharp */
+        @media (max-width: 768px) {
+            .section-title {
+                text-shadow: 0 0 8px var(--neon-blue);
+                filter: brightness(1);
+                -webkit-text-stroke: 0.3px transparent;
+                text-rendering: optimizeLegibility;
+            }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+            .section-title {
+                text-shadow: 0 0 5px var(--neon-blue);
+                -webkit-text-stroke: 0px;
+            }
         }
 
         .projects-grid {
@@ -214,9 +304,23 @@
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
-            backdrop-filter: blur(10px);
             cursor: pointer;
             -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Desktop project card effects */
+        @media (min-width: 769px) {
+            .project-card {
+                backdrop-filter: blur(10px);
+            }
+        }
+
+        /* Mobile project card - Remove heavy effects */
+        @media (max-width: 768px) {
+            .project-card {
+                backdrop-filter: none;
+                background: rgba(255, 255, 255, 0.08);
+            }
         }
 
         .project-card::before {
@@ -230,22 +334,35 @@
             transition: left 0.5s ease;
         }
 
-        /* Touch-friendly hover alternatives */
         .project-card:hover::before,
         .project-card:focus::before,
         .project-card:active::before {
             left: 100%;
         }
 
-        .project-card:hover,
-        .project-card:focus,
-        .project-card:active {
-            transform: translateY(-10px) scale(1.02);
-            border-color: var(--neon-blue);
-            box-shadow: 
-                0 20px 40px rgba(0, 255, 255, 0.2),
-                0 0 40px rgba(0, 255, 255, 0.1),
-                inset 0 0 20px rgba(0, 255, 255, 0.05);
+        /* Desktop hover effects */
+        @media (min-width: 769px) {
+            .project-card:hover,
+            .project-card:focus,
+            .project-card:active {
+                transform: translateY(-10px) scale(1.02);
+                border-color: var(--neon-blue);
+                box-shadow: 
+                    0 20px 40px rgba(0, 255, 255, 0.2),
+                    0 0 40px rgba(0, 255, 255, 0.1),
+                    inset 0 0 20px rgba(0, 255, 255, 0.05);
+            }
+        }
+
+        /* Mobile hover effects - Lighter */
+        @media (max-width: 768px) {
+            .project-card:hover,
+            .project-card:focus,
+            .project-card:active {
+                transform: translateY(-5px) scale(1.01);
+                border-color: var(--neon-blue);
+                box-shadow: 0 10px 20px rgba(0, 255, 255, 0.15);
+            }
         }
 
         .project-card h3 {
@@ -276,7 +393,7 @@
             font-weight: 500;
         }
 
-        /* Contact Section */
+        /* Contact Section - Optimized */
         .contact {
             padding: 80px 0;
             text-align: center;
@@ -327,13 +444,28 @@
             height: 100px;
         }
 
-        .social-link:hover,
-        .social-link:focus,
-        .social-link:active {
-            transform: translateY(-5px) scale(1.1);
-            border-color: var(--neon-blue);
-            box-shadow: 0 15px 30px rgba(0, 255, 255, 0.3), 0 0 30px var(--neon-blue);
-            color: white;
+        /* Desktop social link effects */
+        @media (min-width: 769px) {
+            .social-link:hover,
+            .social-link:focus,
+            .social-link:active {
+                transform: translateY(-5px) scale(1.1);
+                border-color: var(--neon-blue);
+                box-shadow: 0 15px 30px rgba(0, 255, 255, 0.3), 0 0 30px var(--neon-blue);
+                color: white;
+            }
+        }
+
+        /* Mobile social link effects - Lighter */
+        @media (max-width: 768px) {
+            .social-link:hover,
+            .social-link:focus,
+            .social-link:active {
+                transform: translateY(-3px) scale(1.05);
+                border-color: var(--neon-blue);
+                box-shadow: 0 8px 16px rgba(0, 255, 255, 0.2);
+                color: white;
+            }
         }
 
         .social-link i {
@@ -374,7 +506,6 @@
 
             .project-card {
                 padding: 25px;
-                /* Enhance touch targets on mobile */
                 min-height: 200px;
             }
 
@@ -390,15 +521,6 @@
                 width: 70px;
                 height: 70px;
                 font-size: 1.8rem;
-            }
-
-            /* Reduce animation intensity on mobile */
-            .logo {
-                animation-duration: 4s;
-            }
-
-            .word {
-                animation-duration: 4s;
             }
         }
 
@@ -469,6 +591,11 @@
             .bg-grid {
                 animation: none;
             }
+
+            .logo, .section-title {
+                text-shadow: none !important;
+                filter: none !important;
+            }
         }
 
         /* High contrast mode support */
@@ -482,6 +609,27 @@
                 border-color: var(--neon-blue);
                 background: rgba(0, 0, 0, 0.8);
             }
+
+            .logo, .section-title {
+                text-shadow: none;
+                filter: none;
+                -webkit-text-stroke: 1px var(--neon-blue);
+            }
+        }
+
+        /* Text sharpening for better mobile rendering */
+        @media (max-width: 768px) {
+            .logo, .section-title, .project-card h3 {
+                -webkit-font-smoothing: subpixel-antialiased;
+                -moz-osx-font-smoothing: auto;
+                text-rendering: optimizeSpeed;
+            }
+        }
+
+        /* Prevent text blur on transforms */
+        .logo, .section-title {
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
         }
     </style>
 </head>
@@ -592,7 +740,7 @@
         function createParticles() {
             const particlesContainer = document.getElementById('particles');
             const isMobile = window.innerWidth <= 768;
-            const particleCount = isMobile ? 20 : 50; // Reduced particles on mobile
+            const particleCount = isMobile ? 15 : 40; // Further reduced for mobile
 
             for (let i = 0; i < particleCount; i++) {
                 const particle = document.createElement('div');
@@ -608,7 +756,11 @@
                 const colors = ['var(--neon-blue)', 'var(--neon-purple)', 'var(--neon-pink)', 'var(--neon-green)'];
                 const color = colors[Math.floor(Math.random() * colors.length)];
                 particle.style.background = color;
-                particle.style.boxShadow = `0 0 10px ${color}`;
+                
+                // Only add glow on desktop
+                if (!isMobile) {
+                    particle.style.boxShadow = `0 0 10px ${color}`;
+                }
                 
                 particlesContainer.appendChild(particle);
             }
@@ -639,24 +791,23 @@
         // Enhanced project card interactions with touch support
         function setupProjectCards() {
             const cards = document.querySelectorAll('.project-card');
+            const isMobile = 'ontouchstart' in window;
             
             cards.forEach(card => {
                 // Mouse events for desktop
-                card.addEventListener('mouseenter', () => {
-                    if (!('ontouchstart' in window)) {
+                if (!isMobile) {
+                    card.addEventListener('mouseenter', () => {
                         card.style.filter = 'brightness(1.1)';
-                    }
-                });
-                
-                card.addEventListener('mouseleave', () => {
-                    if (!('ontouchstart' in window)) {
+                    });
+                    
+                    card.addEventListener('mouseleave', () => {
                         card.style.filter = 'brightness(1)';
-                    }
-                });
+                    });
+                }
 
                 // Touch events for mobile
                 card.addEventListener('touchstart', () => {
-                    card.style.filter = 'brightness(1.1)';
+                    card.style.filter = 'brightness(1.05)';
                 }, { passive: true });
 
                 card.addEventListener('touchend', () => {
@@ -665,11 +816,12 @@
                     }, 150);
                 }, { passive: true });
 
-                // Enhanced click/tap effect
+                // Enhanced click/tap effect with mobile optimization
                 card.addEventListener('click', () => {
-                    card.style.transform = 'translateY(-10px) scale(0.98)';
+                    const scale = isMobile ? 0.99 : 0.98;
+                    card.style.transform = `translateY(-${isMobile ? 5 : 10}px) scale(${scale})`;
                     setTimeout(() => {
-                        card.style.transform = 'translateY(-10px) scale(1.02)';
+                        card.style.transform = `translateY(-${isMobile ? 5 : 10}px) scale(${isMobile ? 1.01 : 1.02})`;
                     }, 100);
                 });
 
@@ -750,10 +902,20 @@
             }, 100);
         });
 
-        // Improve performance on low-end devices
-        if (navigator.hardwareConcurrency <= 2) {
-            // Reduce animation complexity for low-end devices
-            document.documentElement.style.setProperty('--reduced-animations', '1');
+        // Mobile-specific optimizations
+        if (window.innerWidth <= 768) {
+            // Reduce animation complexity
+            document.documentElement.style.setProperty('--animation-speed', '0.5');
+            
+            // Optimize font rendering for mobile
+            const style = document.createElement('style');
+            style.textContent = `
+                .logo, .section-title {
+                    text-rendering: optimizeSpeed;
+                    -webkit-font-smoothing: subpixel-antialiased;
+                }
+            `;
+            document.head.appendChild(style);
         }
     </script>
 </body>
