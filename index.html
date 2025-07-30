@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atsh - Cyberpunk Portfolio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --neon-blue: #00ffff;
+            --neon-purple: #8a2be2;
+            --neon-pink: #ff1493;
+            --neon-green: #00ff41;
+            --dark-bg: #0a0a0a;
+            --darker-bg: #050505;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated Background Grid */
+        .bg-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: gridMove 20s linear infinite;
+            z-index: -2;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        /* Particle Animation */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--neon-blue);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+            box-shadow: 0 0 10px var(--neon-blue);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 1; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.5; }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 80px 0 60px;
+            position: relative;
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(4rem, 8vw, 8rem);
+            font-weight: 900;
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple), var(--neon-pink));
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: neonGlow 3s ease-in-out infinite alternate, gradientShift 4s ease-in-out infinite;
+            text-shadow: 0 0 30px var(--neon-blue);
+            margin-bottom: 20px;
+        }
+
+        @keyframes neonGlow {
+            0% { filter: brightness(1) blur(0px); }
+            100% { filter: brightness(1.3) blur(1px); }
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Tagline */
+        .tagline {
+            text-align: center;
+            padding: 60px 0;
+            position: relative;
+        }
+
+        .tagline h2 {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            font-weight: 700;
+            margin-bottom: 30px;
+            opacity: 0;
+            animation: typewriter 2s steps(40) 1s forwards;
+            border-right: 3px solid var(--neon-green);
+            white-space: nowrap;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        @keyframes typewriter {
+            0% { width: 0; opacity: 1; }
+            100% { width: 100%; opacity: 1; }
+        }
+
+        .tagline-words {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .word {
+            font-size: clamp(1.2rem, 3vw, 2rem);
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            animation: wordGlow 3s ease-in-out infinite;
+            animation-delay: var(--delay);
+        }
+
+        .word:nth-child(1) { --delay: 0s; color: var(--neon-blue); }
+        .word:nth-child(2) { --delay: 1s; color: var(--neon-purple); }
+        .word:nth-child(3) { --delay: 2s; color: var(--neon-pink); }
+
+        @keyframes wordGlow {
+            0%, 100% { text-shadow: 0 0 10px currentColor; transform: scale(1); }
+            50% { text-shadow: 0 0 20px currentColor, 0 0 30px currentColor; transform: scale(1.05); }
+        }
+
+        /* Projects Section */
+        .projects {
+            padding: 80px 0;
+        }
+
+        .section-title {
+            font-family: 'Orbitron', monospace;
+            font-size: clamp(2rem, 5vw, 4rem);
+            text-align: center;
+            margin-bottom: 60px;
+            background: linear-gradient(45deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .project-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .project-card:hover::before {
+            left: 100%;
+        }
+
+        .project-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color: var(--neon-blue);
+            box-shadow: 
+                0 20px 40px rgba(0, 255, 255, 0.2),
+                0 0 40px rgba(0, 255, 255, 0.1),
+                inset 0 0 20px rgba(0, 255, 255, 0.05);
+        }
+
+        .project-card h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: var(--neon-blue);
+        }
+
+        .project-card p {
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tech-tag {
+            background: linear-gradient(45deg, var(--neon-purple), var(--neon-pink));
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Contact Section */
+        .contact {
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .social-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 50%;
+            color: var(--neon-blue);
+            font-size: 2rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .social-link::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, var(--neon-blue), transparent);
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+        }
+
+        .social-link:hover::before {
+            width: 100px;
+            height: 100px;
+        }
+
+        .social-link:hover {
+            transform: translateY(-5px) scale(1.1);
+            border-color: var(--neon-blue);
+            box-shadow: 0 15px 30px rgba(0, 255, 255, 0.3), 0 0 30px var(--neon-blue);
+            color: white;
+        }
+
+        .social-link i {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+
+            .header {
+                padding: 60px 0 40px;
+            }
+
+            .tagline h2 {
+                white-space: normal;
+                border-right: none;
+            }
+
+            .tagline-words {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+            }
+
+            .projects-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .social-links {
+                gap: 20px;
+            }
+
+            .social-link {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Loading animation */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="bg-grid"></div>
+    <div class="particles" id="particles"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1 class="logo fade-in">ATSH</h1>
+        </div>
+    </header>
+
+    <!-- Tagline -->
+    <section class="tagline">
+        <div class="container">
+            <h2 class="fade-in">Engineer. Dreamer. Creator of Tomorrow.</h2>
+            <div class="tagline-words fade-in">
+                <span class="word">Engineer.</span>
+                <span class="word">Dreamer.</span>
+                <span class="word">Creator of Tomorrow.</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects -->
+    <section class="projects">
+        <div class="container">
+            <h2 class="section-title fade-in">Projects</h2>
+            <div class="projects-grid">
+                <div class="project-card fade-in">
+                    <h3>Neural Networks</h3>
+                    <p>Advanced AI systems that push the boundaries of machine learning and deep neural architectures.</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">Python</span>
+                        <span class="tech-tag">TensorFlow</span>
+                        <span class="tech-tag">PyTorch</span>
+                    </div>
+                </div>
+                <div class="project-card fade-in">
+                    <h3>Quantum Computing</h3>
+                    <p>Exploring quantum algorithms and their applications in solving complex computational problems.</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">Qiskit</span>
+                        <span class="tech-tag">Cirq</span>
+                        <span class="tech-tag">Q#</span>
+                    </div>
+                </div>
+                <div class="project-card fade-in">
+                    <h3>Cybersecurity Tools</h3>
+                    <p>Next-generation security frameworks and penetration testing tools for the digital age.</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">Rust</span>
+                        <span class="tech-tag">Go</span>
+                        <span class="tech-tag">Docker</span>
+                    </div>
+                </div>
+                <div class="project-card fade-in">
+                    <h3>Blockchain Protocol</h3>
+                    <p>Decentralized systems and smart contracts that redefine digital trust and transparency.</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">Solidity</span>
+                        <span class="tech-tag">Web3</span>
+                        <span class="tech-tag">IPFS</span>
+                    </div>
+                </div>
+                <div class="project-card fade-in">
+                    <h3>AR/VR Interface</h3>
+                    <p>Immersive experiences that blend reality with digital innovation for next-gen interactions.</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">Unity</span>
+                        <span class="tech-tag">Three.js</span>
+                        <span class="tech-tag">WebXR</span>
+                    </div>
+                </div>
+                <div class="project-card fade-in">
+                    <h3>IoT Ecosystem</h3>
+                    <p>Connected device networks that create intelligent environments and automated systems.</p>
+                    <div class="tech-stack">
+                        <span class="tech-tag">Arduino</span>
+                        <span class="tech-tag">Raspberry Pi</span>
+                        <span class="tech-tag">MQTT</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="contact">
+        <div class="container">
+            <h2 class="section-title fade-in">Connect</h2>
+            <div class="social-links fade-in">
+                <a href="mailto:atsh@example.com" class="social-link" aria-label="Email">
+                    <i class="fas fa-envelope"></i>
+                </a>
+                <a href="https://github.com/atsh" class="social-link" aria-label="GitHub" target="_blank" rel="noopener">
+                    <i class="fab fa-github"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Particle system
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                
+                // Random position and animation
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (3 + Math.random() * 6) + 's';
+                
+                // Random color
+                const colors = ['var(--neon-blue)', 'var(--neon-purple)', 'var(--neon-pink)', 'var(--neon-green)'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.background = color;
+                particle.style.boxShadow = `0 0 10px ${color}`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Intersection Observer for fade-in animations
+        function setupScrollAnimations() {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationDelay = '0s';
+                        entry.target.classList.add('fade-in');
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all fade-in elements
+            document.querySelectorAll('.fade-in').forEach(el => {
+                observer.observe(el);
+            });
+        }
+
+        // Enhanced project card interactions
+        function setupProjectCards() {
+            const cards = document.querySelectorAll('.project-card');
+            
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    // Add extra glow effect
+                    card.style.filter = 'brightness(1.1)';
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    card.style.filter = 'brightness(1)';
+                });
+
+                // Add click effect
+                card.addEventListener('click', () => {
+                    card.style.transform = 'translateY(-10px) scale(0.98)';
+                    setTimeout(() => {
+                        card.style.transform = 'translateY(-10px) scale(1.02)';
+                    }, 100);
+                });
+            });
+        }
+
+        // Smooth reveal animations
+        function setupRevealAnimations() {
+            const elements = document.querySelectorAll('.fade-in');
+            elements.forEach((el, index) => {
+                el.style.animationDelay = `${index * 0.1}s`;
+            });
+        }
+
+        // Mouse trail effect
+        function createMouseTrail() {
+            let trail = [];
+            const trailLength = 20;
+
+            document.addEventListener('mousemove', (e) => {
+                trail.push({ x: e.clientX, y: e.clientY });
+                
+                if (trail.length > trailLength) {
+                    trail.shift();
+                }
+
+                // Remove existing trail elements
+                document.querySelectorAll('.mouse-trail').forEach(el => el.remove());
+
+                // Create new trail elements
+                trail.forEach((point, index) => {
+                    const trailElement = document.createElement('div');
+                    trailElement.className = 'mouse-trail';
+                    trailElement.style.cssText = `
+                        position: fixed;
+                        left: ${point.x}px;
+                        top: ${point.y}px;
+                        width: ${6 - (index * 0.3)}px;
+                        height: ${6 - (index * 0.3)}px;
+                        background: var(--neon-blue);
+                        border-radius: 50%;
+                        pointer-events: none;
+                        z-index: 9999;
+                        opacity: ${(trailLength - index) / trailLength * 0.5};
+                        box-shadow: 0 0 10px var(--neon-blue);
+                        transform: translate(-50%, -50%);
+                        transition: opacity 0.1s ease;
+                    `;
+                    document.body.appendChild(trailElement);
+
+                    // Remove after animation
+                    setTimeout(() => {
+                        if (trailElement.parentNode) {
+                            trailElement.parentNode.removeChild(trailElement);
+                        }
+                    }, 100);
+                });
+            });
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            setupScrollAnimations();
+            setupProjectCards();
+            setupRevealAnimations();
+            createMouseTrail();
+
+            // Add initial loading animation
+            document.body.style.opacity = '0';
+            setTimeout(() => {
+                document.body.style.opacity = '1';
+                document.body.style.transition = 'opacity 1s ease';
+            }, 100);
+        });
+
+        // Performance optimization: Throttle mouse events
+        function throttle(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') {
+                window.scrollBy({ top: 100, behavior: 'smooth' });
+            } else if (e.key === 'ArrowUp') {
+                window.scrollBy({ top: -100, behavior: 'smooth' });
+            }
+        });
+    </script>
+</body>
+</html>
