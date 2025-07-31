@@ -115,7 +115,7 @@ function handlePasskey() {
     const email = emailInput.value.trim();
     if (!email) return alert("Please enter your email first.");
 
-    const backend = "https://your-backend.onrender.com"; // change to your Render URL
+    const backend = "https://passkey-backend-6w35.onrender.com"; // change to your Render URL
 
     try {
       const registerOptionsRes = await fetch(`${backend}/register/options`, {
