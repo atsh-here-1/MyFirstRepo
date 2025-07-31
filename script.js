@@ -115,7 +115,7 @@ function handlePasskey() {
     const email = emailInput.value.trim();
     if (!email) return alert("Please enter your email first.");
 
-    const backend = "https://passkey-backend-6w35.onrender.com"; // change to your Render URL
+    const backend = "https://passkey-backend-6w35.onrender.com";
 
     try {
       const registerOptionsRes = await fetch(`${backend}/register/options`, {
@@ -123,33 +123,52 @@ function handlePasskey() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
+
       const options = await registerOptionsRes.json();
 
-      // Decode base64 to Uint8Arrays
       options.challenge = Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0));
       options.user.id = Uint8Array.from(atob(options.user.id), c => c.charCodeAt(0));
 
       const credential = await navigator.credentials.create({ publicKey: options });
 
-      const response = await fetch(`${backend}/register/verify`, {
+      function bufferToBase64(buffer) {
+        return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+      }
+
+      function serializePublicKeyCredential(cred) {
+        return {
+          id: cred.id,
+          rawId: bufferToBase64(cred.rawId),
+          type: cred.type,
+          response: {
+            clientDataJSON: bufferToBase64(cred.response.clientDataJSON),
+            attestationObject: bufferToBase64(cred.response.attestationObject),
+          },
+        };
+      }
+
+      const serialized = serializePublicKeyCredential(credential);
+
+      const verifyRes = await fetch(`${backend}/register/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, attResp: credential }),
+        body: JSON.stringify({ email, attResp: serialized }),
       });
 
-      const result = await response.json();
+      const result = await verifyRes.json();
 
       if (result.verified) {
-        alert("Passkey successfully registered 🎉");
+        alert("✅ Passkey successfully registered!");
       } else {
-        alert("Passkey verification failed ❌");
+        alert("❌ Passkey verification failed.");
       }
     } catch (err) {
-      console.error("WebAuthn error:", err);
+      console.error("❌ WebAuthn error:", err);
       alert("Something went wrong with Passkey setup.");
     }
   });
 }
+
 
 // Init all
 document.addEventListener("DOMContentLoaded", () => {
