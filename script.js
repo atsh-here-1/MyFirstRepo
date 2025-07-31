@@ -123,7 +123,20 @@ function serializeCredential(cred) {
 }
 
 function base64urlToBase64(base64url) {
+  if (!base64url || typeof base64url !== "string") return "";
   return base64url.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(base64url.length / 4) * 4, '=');
+}
+
+function serializeCredential(cred) {
+  return {
+    id: cred.id,
+    type: cred.type,
+    rawId: btoa(String.fromCharCode(...new Uint8Array(cred.rawId))),
+    response: {
+      attestationObject: btoa(String.fromCharCode(...new Uint8Array(cred.response.attestationObject))),
+      clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(cred.response.clientDataJSON)))
+    }
+  };
 }
 
 function handlePasskey() {
@@ -144,9 +157,13 @@ function handlePasskey() {
       });
 
       const options = await registerOptionsRes.json();
-      console.log("🟢 Registration Options:", options);
+      console.log("🟢 Registration Options received:", options);
 
-      // ✅ Fix decoding
+      if (!options.challenge || !options.user || !options.user.id) {
+        throw new Error("Missing required WebAuthn fields from backend");
+      }
+
+      // Decode base64url safely
       options.challenge = Uint8Array.from(
         atob(base64urlToBase64(options.challenge)),
         c => c.charCodeAt(0)
@@ -158,7 +175,6 @@ function handlePasskey() {
 
       const credential = await navigator.credentials.create({ publicKey: options });
       const serialized = serializeCredential(credential);
-      console.log("🟢 Serialized Credential:", serialized);
 
       const response = await fetch(`${backend}/register/verify`, {
         method: "POST",
@@ -167,7 +183,7 @@ function handlePasskey() {
       });
 
       const result = await response.json();
-      console.log("✅ Backend verification result:", result);
+      console.log("✅ Verification result:", result);
 
       if (result.verified) {
         alert("🎉 Passkey successfully registered!");
@@ -176,11 +192,10 @@ function handlePasskey() {
       }
     } catch (err) {
       console.error("❌ WebAuthn error (client side):", err);
-      alert("Something went wrong with Passkey setup. Check console for details.");
+      alert("Something went wrong with Passkey setup.");
     }
   });
 }
-
 
 // === INIT ===
 document.addEventListener("DOMContentLoaded", () => {
