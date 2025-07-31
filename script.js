@@ -1,6 +1,4 @@
-// script.js
-
-// Particles + UI effects
+// Particle + UI Effects
 function createParticles() {
   const container = document.getElementById("particles");
   const count = 50;
@@ -62,7 +60,7 @@ function addButtonEffects() {
   document.head.appendChild(rippleKeyframes);
 }
 
-// Firebase Auth Logic
+// Firebase Email & Google Auth
 function handleAuth() {
   const auth = firebase.auth();
 
@@ -108,9 +106,55 @@ function handleAuth() {
   });
 }
 
-// INIT EVERYTHING
+// WebAuthn Passkey Registration
+function handlePasskey() {
+  const passkeyBtn = document.querySelector(".passkey");
+  const emailInput = document.getElementById("email");
+
+  passkeyBtn.addEventListener("click", async () => {
+    const email = emailInput.value.trim();
+    if (!email) return alert("Please enter your email first.");
+
+    const backend = "https://your-backend.onrender.com"; // change to your Render URL
+
+    try {
+      const registerOptionsRes = await fetch(`${backend}/register/options`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const options = await registerOptionsRes.json();
+
+      // Decode base64 to Uint8Arrays
+      options.challenge = Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0));
+      options.user.id = Uint8Array.from(atob(options.user.id), c => c.charCodeAt(0));
+
+      const credential = await navigator.credentials.create({ publicKey: options });
+
+      const response = await fetch(`${backend}/register/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, attResp: credential }),
+      });
+
+      const result = await response.json();
+
+      if (result.verified) {
+        alert("Passkey successfully registered 🎉");
+      } else {
+        alert("Passkey verification failed ❌");
+      }
+    } catch (err) {
+      console.error("WebAuthn error:", err);
+      alert("Something went wrong with Passkey setup.");
+    }
+  });
+}
+
+// Init all
 document.addEventListener("DOMContentLoaded", () => {
   createParticles();
   addButtonEffects();
   handleAuth();
+  handlePasskey(); // 🆕 Add WebAuthn Support
 });
