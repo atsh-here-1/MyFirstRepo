@@ -162,10 +162,11 @@ function handlePasskey() {
       } else {
         alert("❌ Passkey verification failed.");
       }
-    } catch (err) {
-      console.error("❌ WebAuthn error:", err);
-      alert("Something went wrong with Passkey setup.");
-    }
+    } } catch (err) {
+  console.error("❌ WebAuthn error (client side):", err);
+  alert("Something went wrong with Passkey setup. Check console for details.");
+}
+
   });
 }
 
