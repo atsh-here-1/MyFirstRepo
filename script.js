@@ -1,4 +1,4 @@
-// === Particles + UI Effects ===
+// ✨ Particle + UI Effects
 function createParticles() {
   const container = document.getElementById("particles");
   const count = 50;
@@ -60,7 +60,7 @@ function addButtonEffects() {
   document.head.appendChild(rippleKeyframes);
 }
 
-// === Firebase Auth ===
+// ✅ Firebase Email & Google Auth
 function handleAuth() {
   const auth = firebase.auth();
   const form = document.getElementById("login-form");
@@ -74,14 +74,12 @@ function handleAuth() {
     try {
       button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
       button.disabled = true;
-
       await auth.signInWithEmailAndPassword(email, password);
       button.innerHTML = '<i class="fas fa-check"></i> Access Granted';
       button.style.background = 'rgba(0,255,0,0.2)';
       button.style.borderColor = '#00ff00';
     } catch (err) {
       alert("Login failed: " + err.message);
-      button.innerHTML = '<i class="fas fa-sign-in-alt"></i> Access System';
     } finally {
       setTimeout(() => {
         button.disabled = false;
@@ -104,91 +102,87 @@ function handleAuth() {
   });
 }
 
-// === WebAuthn (Passkey) ===
-function bufferToBase64(buffer) {
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+// 🔐 Decode base64url → Uint8Array
+function base64urlToBuffer(base64url) {
+  const padding = '='.repeat((4 - base64url.length % 4) % 4);
+  const base64 = (base64url + padding).replace(/-/g, '+').replace(/_/g, '/');
+  return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
 }
 
-function serializeCredential(cred) {
-  return {
-    id: cred.id,
-    rawId: bufferToBase64(cred.rawId),
-    type: cred.type,
-    response: {
-      attestationObject: bufferToBase64(cred.response.attestationObject),
-      clientDataJSON: bufferToBase64(cred.response.clientDataJSON),
-    },
-    clientExtensionResults: cred.getClientExtensionResults(),
-  };
-}
-
-function base64urlToBase64(base64url) {
-  if (!base64url || typeof base64url !== "string") return "";
-  return base64url.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(base64url.length / 4) * 4, '=');
-}
-
-function serializeCredential(cred) {
-  return {
-    id: cred.id,
-    type: cred.type,
-    rawId: btoa(String.fromCharCode(...new Uint8Array(cred.rawId))),
-    response: {
-      attestationObject: btoa(String.fromCharCode(...new Uint8Array(cred.response.attestationObject))),
-      clientDataJSON: btoa(String.fromCharCode(...new Uint8Array(cred.response.clientDataJSON)))
-    }
-  };
-}
-
+// 🔐 WebAuthn Registration & Login
 function handlePasskey() {
   const passkeyBtn = document.querySelector(".passkey");
   const emailInput = document.getElementById("email");
+  const backend = "https://passkey-backend-6w35.onrender.com";
 
   passkeyBtn.addEventListener("click", async () => {
     const email = emailInput.value.trim();
     if (!email) return alert("Please enter your email first.");
 
-    const backend = "https://passkey-backend-6w35.onrender.com";
+    const isLogin = confirm("Do you want to log in using passkey?\nClick Cancel to register.");
 
     try {
-      const registerOptionsRes = await fetch(`${backend}/register/options`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
+      if (isLogin) {
+        // 🟢 LOGIN FLOW
+        const loginOptionsRes = await fetch(`${backend}/login/options`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const options = await loginOptionsRes.json();
 
-      const options = await registerOptionsRes.json();
-      console.log("🟢 Registration Options received:", options);
+        options.challenge = base64urlToBuffer(options.challenge);
+        options.allowCredentials = options.allowCredentials.map(cred => ({
+          ...cred,
+          id: base64urlToBuffer(cred.id),
+        }));
 
-      if (!options.challenge || !options.user || !options.user.id) {
-        throw new Error("Missing required WebAuthn fields from backend");
-      }
+        const assertion = await navigator.credentials.get({ publicKey: options });
 
-      // Decode base64url safely
-      options.challenge = Uint8Array.from(
-        atob(base64urlToBase64(options.challenge)),
-        c => c.charCodeAt(0)
-      );
-      options.user.id = Uint8Array.from(
-        atob(base64urlToBase64(options.user.id)),
-        c => c.charCodeAt(0)
-      );
+        const loginRes = await fetch(`${backend}/login/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            authResp: assertion,
+          }),
+        });
 
-      const credential = await navigator.credentials.create({ publicKey: options });
-      const serialized = serializeCredential(credential);
-
-      const response = await fetch(`${backend}/register/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, attResp: serialized }),
-      });
-
-      const result = await response.json();
-      console.log("✅ Verification result:", result);
-
-      if (result.verified) {
-        alert("🎉 Passkey successfully registered!");
+        const result = await loginRes.json();
+        if (result.verified) {
+          alert("✅ Logged in with Passkey!");
+        } else {
+          alert("❌ Passkey login failed");
+        }
       } else {
-        alert("❌ Passkey verification failed.");
+        // 🟡 REGISTRATION FLOW
+        const regOptionsRes = await fetch(`${backend}/register/options`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+
+        const options = await regOptionsRes.json();
+        options.challenge = base64urlToBuffer(options.challenge);
+        options.user.id = base64urlToBuffer(options.user.id);
+
+        const credential = await navigator.credentials.create({ publicKey: options });
+
+        const regRes = await fetch(`${backend}/register/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            attResp: credential,
+          }),
+        });
+
+        const result = await regRes.json();
+        if (result.verified) {
+          alert("🎉 Passkey Registered!");
+        } else {
+          alert("❌ Passkey registration failed");
+        }
       }
     } catch (err) {
       console.error("❌ WebAuthn error (client side):", err);
@@ -197,10 +191,10 @@ function handlePasskey() {
   });
 }
 
-// === INIT ===
+// 🚀 Init All
 document.addEventListener("DOMContentLoaded", () => {
   createParticles();
   addButtonEffects();
   handleAuth();
-  handlePasskey(); // 🆕 WebAuthn support
+  handlePasskey();
 });
