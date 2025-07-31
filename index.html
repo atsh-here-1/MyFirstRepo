@@ -1,83 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Cyberpunk Login - Access Terminal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cyberpunk Login - Access Terminal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Firebase SDK -->
+  <script defer src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+  <script defer src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+  <script defer src="firebase-init.js"></script>
+  <script defer src="script.js"></script>
 </head>
 
 <body>
-    <div class="particles" id="particles"></div>
+  <div class="particles" id="particles"></div>
 
-    <div class="login-container">
-        <div class="login-card">
-            <div class="login-header">
-                <h1 class="login-title">ACCESS TERMINAL</h1>
-                <p class="login-subtitle">Neural Interface Login</p>
-            </div>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-header">
+        <h1 class="login-title">ACCESS TERMINAL</h1>
+        <p class="login-subtitle">Neural Interface Login</p>
+      </div>
 
-            <div class="login-options">
-                <button class="login-btn google" id="google-login">
-                    <i class="fab fa-google"></i>
-                    Continue with Google
-                </button>
+      <div class="login-options">
+        <button class="login-btn google" id="google-login">
+          <i class="fab fa-google"></i>
+          Continue with Google
+        </button>
 
-                <button class="login-btn passkey">
-                    <i class="fas fa-fingerprint"></i>
-                    Use Passkey
-                </button>
-            </div>
+        <button class="login-btn passkey">
+          <i class="fas fa-fingerprint"></i>
+          Use Passkey
+        </button>
+      </div>
 
-            <div class="divider">OR</div>
+      <div class="divider">OR</div>
 
-            <form class="email-form" id="login-form">
-                <div class="form-group">
-                    <input type="email" id="email" class="form-input" placeholder="Email Address" required />
-                </div>
-
-                <div class="form-group">
-                    <input type="password" id="password" class="form-input" placeholder="Password" required />
-                </div>
-
-                <button type="submit" class="login-btn">
-                    <i class="fas fa-sign-in-alt"></i>
-                    Access System
-                </button>
-
-                <div class="forgot-password">
-                    <a href="#" class="forgot-link">Forgot password?</a>
-                </div>
-            </form>
-
-            <div class="footer-text">
-                Don't have an account? <a href="#" class="footer-link">Create Neural Link</a>
-            </div>
+      <form class="email-form">
+        <div class="form-group">
+          <input type="email" id="email" class="form-input" placeholder="Email Address" required />
         </div>
+
+        <div class="form-group">
+          <input type="password" id="password" class="form-input" placeholder="Password" required />
+        </div>
+
+        <button type="submit" class="login-btn">
+          <i class="fas fa-sign-in-alt"></i>
+          Access System
+        </button>
+
+        <div class="forgot-password">
+          <a href="#" class="forgot-link">Forgot password?</a>
+        </div>
+      </form>
+
+      <div class="footer-text">
+        Don't have an account? <a href="#" class="footer-link">Create Neural Link</a>
+      </div>
     </div>
-
-    <!-- 🔥 Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js"></script>
-
-    <!-- 🔥 Firebase Config & Init -->
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBJgwoXtuQBjxvjZNBaFaobgmVjVJNKgqM",
-            authDomain: "ascandane.firebaseapp.com",
-            projectId: "ascandane",
-            storageBucket: "ascandane.appspot.com",
-            messagingSenderId: "389414086414",
-            appId: "1:389414086414:web:e83f36f864afb41861595f",
-            measurementId: "G-NMXHWJ4GRJ"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-    </script>
-
-    <!-- 🌐 Your custom JS (after Firebase is ready) -->
-    <script src="script.js"></script>
+  </div>
 </body>
 </html>
