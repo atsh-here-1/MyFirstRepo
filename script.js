@@ -122,6 +122,10 @@ function serializeCredential(cred) {
   };
 }
 
+function base64urlToBase64(base64url) {
+  return base64url.replace(/-/g, '+').replace(/_/g, '/').padEnd(Math.ceil(base64url.length / 4) * 4, '=');
+}
+
 function handlePasskey() {
   const passkeyBtn = document.querySelector(".passkey");
   const emailInput = document.getElementById("email");
@@ -133,7 +137,6 @@ function handlePasskey() {
     const backend = "https://passkey-backend-6w35.onrender.com";
 
     try {
-      // Step 1: Get registration options
       const registerOptionsRes = await fetch(`${backend}/register/options`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -143,14 +146,20 @@ function handlePasskey() {
       const options = await registerOptionsRes.json();
       console.log("🟢 Registration Options:", options);
 
-      options.challenge = Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0));
-      options.user.id = Uint8Array.from(atob(options.user.id), c => c.charCodeAt(0));
+      // ✅ Fix decoding
+      options.challenge = Uint8Array.from(
+        atob(base64urlToBase64(options.challenge)),
+        c => c.charCodeAt(0)
+      );
+      options.user.id = Uint8Array.from(
+        atob(base64urlToBase64(options.user.id)),
+        c => c.charCodeAt(0)
+      );
 
       const credential = await navigator.credentials.create({ publicKey: options });
       const serialized = serializeCredential(credential);
       console.log("🟢 Serialized Credential:", serialized);
 
-      // Step 2: Send to backend for verification
       const response = await fetch(`${backend}/register/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -171,6 +180,7 @@ function handlePasskey() {
     }
   });
 }
+
 
 // === INIT ===
 document.addEventListener("DOMContentLoaded", () => {
