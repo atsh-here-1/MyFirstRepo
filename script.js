@@ -1,4 +1,4 @@
-// Particle + UI Effects
+// === Particles + UI Effects ===
 function createParticles() {
   const container = document.getElementById("particles");
   const count = 50;
@@ -60,12 +60,11 @@ function addButtonEffects() {
   document.head.appendChild(rippleKeyframes);
 }
 
-// Firebase Email & Google Auth
+// === Firebase Auth ===
 function handleAuth() {
   const auth = firebase.auth();
-
-  // Email login
   const form = document.getElementById("login-form");
+
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const email = document.getElementById("email").value;
@@ -93,7 +92,6 @@ function handleAuth() {
     }
   });
 
-  // Google login
   const googleBtn = document.getElementById("google-login");
   googleBtn.addEventListener("click", async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -106,7 +104,24 @@ function handleAuth() {
   });
 }
 
-// WebAuthn Passkey Registration
+// === WebAuthn (Passkey) ===
+function bufferToBase64(buffer) {
+  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+}
+
+function serializeCredential(cred) {
+  return {
+    id: cred.id,
+    rawId: bufferToBase64(cred.rawId),
+    type: cred.type,
+    response: {
+      attestationObject: bufferToBase64(cred.response.attestationObject),
+      clientDataJSON: bufferToBase64(cred.response.clientDataJSON),
+    },
+    clientExtensionResults: cred.getClientExtensionResults(),
+  };
+}
+
 function handlePasskey() {
   const passkeyBtn = document.querySelector(".passkey");
   const emailInput = document.getElementById("email");
@@ -118,6 +133,7 @@ function handlePasskey() {
     const backend = "https://passkey-backend-6w35.onrender.com";
 
     try {
+      // Step 1: Get registration options
       const registerOptionsRes = await fetch(`${backend}/register/options`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -125,56 +141,41 @@ function handlePasskey() {
       });
 
       const options = await registerOptionsRes.json();
+      console.log("🟢 Registration Options:", options);
 
       options.challenge = Uint8Array.from(atob(options.challenge), c => c.charCodeAt(0));
       options.user.id = Uint8Array.from(atob(options.user.id), c => c.charCodeAt(0));
 
       const credential = await navigator.credentials.create({ publicKey: options });
+      const serialized = serializeCredential(credential);
+      console.log("🟢 Serialized Credential:", serialized);
 
-      function bufferToBase64(buffer) {
-        return btoa(String.fromCharCode(...new Uint8Array(buffer)));
-      }
-
-      function serializePublicKeyCredential(cred) {
-        return {
-          id: cred.id,
-          rawId: bufferToBase64(cred.rawId),
-          type: cred.type,
-          response: {
-            clientDataJSON: bufferToBase64(cred.response.clientDataJSON),
-            attestationObject: bufferToBase64(cred.response.attestationObject),
-          },
-        };
-      }
-
-      const serialized = serializePublicKeyCredential(credential);
-
-      const verifyRes = await fetch(`${backend}/register/verify`, {
+      // Step 2: Send to backend for verification
+      const response = await fetch(`${backend}/register/verify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, attResp: serialized }),
       });
 
-      const result = await verifyRes.json();
+      const result = await response.json();
+      console.log("✅ Backend verification result:", result);
 
       if (result.verified) {
-        alert("✅ Passkey successfully registered!");
+        alert("🎉 Passkey successfully registered!");
       } else {
         alert("❌ Passkey verification failed.");
       }
-    } } catch (err) {
-  console.error("❌ WebAuthn error (client side):", err);
-  alert("Something went wrong with Passkey setup. Check console for details.");
-}
-
+    } catch (err) {
+      console.error("❌ WebAuthn error (client side):", err);
+      alert("Something went wrong with Passkey setup. Check console for details.");
+    }
   });
 }
 
-
-// Init all
+// === INIT ===
 document.addEventListener("DOMContentLoaded", () => {
   createParticles();
   addButtonEffects();
   handleAuth();
-  handlePasskey(); // 🆕 Add WebAuthn Support
+  handlePasskey(); // 🆕 WebAuthn support
 });
