@@ -1,4 +1,4 @@
-// ✅ server.js (Fixed isoBase64URL + Passkey backend)
+// ✅ server.js (Fixed with toBase64URL)
 const express = require('express');
 const cors = require('cors');
 const { 
@@ -7,7 +7,7 @@ const {
   generateAuthenticationOptions, 
   verifyAuthenticationResponse 
 } = require('@simplewebauthn/server');
-const helpers = require('@simplewebauthn/server/helpers'); // ✅ Use helpers correctly
+const { toBase64URL } = require('@simplewebauthn/server/helpers'); // ✅ Correct import
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -57,8 +57,8 @@ app.post('/register-challenge', (req, res) => {
   user.currentChallenge = options.challenge;
 
   // Convert Buffer fields to base64url so frontend understands
-  options.challenge = helpers.isoBase64URL(options.challenge);
-  options.user.id = helpers.isoBase64URL(options.user.id);
+  options.challenge = toBase64URL(options.challenge);
+  options.user.id = toBase64URL(options.user.id);
 
   res.json(options);
 });
@@ -112,10 +112,10 @@ app.post('/login-challenge', (req, res) => {
   user.currentChallenge = options.challenge;
 
   // Convert buffer fields
-  options.challenge = helpers.isoBase64URL(options.challenge);
+  options.challenge = toBase64URL(options.challenge);
   options.allowCredentials = options.allowCredentials.map(cred => ({
     ...cred,
-    id: helpers.isoBase64URL(cred.id),
+    id: toBase64URL(cred.id),
   }));
 
   res.json(options);
@@ -127,7 +127,7 @@ app.post('/login-verify', async (req, res) => {
   const user = getUser(username);
   console.log("🔐 /login-verify for:", username);
 
-  const cred = user.credentials.find(c => helpers.isoBase64URL(c.id) === body.id);
+  const cred = user.credentials.find(c => toBase64URL(c.id) === body.id);
   if (!cred) return res.status(404).send("Credential not found");
 
   try {
