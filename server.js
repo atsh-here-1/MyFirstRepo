@@ -1,147 +1,175 @@
 import express from 'express';
 import session from 'express-session';
+import cors from 'cors';
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
-import { isoUint8Array, isoBase64URL } from '@simplewebauthn/server/helpers';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
-app.use(express.static('./public'));
+const RP_NAME = 'Atsh Cyberpunk Terminal';
+const RP_ID = 'passkey-backend-6w35.onrender.com';
+const ORIGIN = 'https://atsh.tech';
+
+// Memory store (replace with DB in production)
+const users = new Map();
+
+// Middleware
+app.use(cors({
+  origin: ORIGIN,
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+}));
 app.use(express.json());
 app.use(session({
-  secret: 'supersecret',
+  secret: 'cyberpunk-super-secret',
   resave: false,
   saveUninitialized: true,
+  cookie: { maxAge: 3600000 }
 }));
 
-const users = []; // in-memory
-
-app.post('/register', (req, res) => {
-  const { username, password } = req.body;
-  if (users.find(u => u.username === username)) {
-    return res.status(409).send('User exists');
+function getUser(username) {
+  if (!users.has(username)) {
+    users.set(username, {
+      id: `user-${Date.now()}`,
+      username,
+      authenticators: []
+    });
+    console.log(`🆕 Created new user: ${username}`);
   }
-  const user = { id: `u${Date.now()}`, username, password, authenticators: [] };
-  users.push(user);
-  console.log('User created:', user.username);
-  res.send('User created');
-});
+  return users.get(username);
+}
 
+// === Register ===
 app.post('/register-challenge', (req, res) => {
   const { username } = req.body;
-  const user = users.find(u => u.username === username);
-  if (!user) return res.status(404).send('No user');
+  console.log('📩 /register-challenge for:', username);
+
+  if (!username) return res.status(400).send('Missing username');
+
+  const user = getUser(username);
 
   const options = generateRegistrationOptions({
-    rpName: 'Atsh Terminal',
-    rpID: 'passkey-backend-6w35.onrender.com',
-    userID: isoUint8Array.fromUTF8String(user.id),
-    userName: user.username,
+    rpName: RP_NAME,
+    rpID: RP_ID,
+    userID: user.id,
+    userName: username,
     attestationType: 'none',
-    excludeCredentials: user.authenticators.map(a => ({
-      id: a.credentialID,
-    })),
     authenticatorSelection: {
-      residentKey: 'required',
       userVerification: 'preferred',
+      residentKey: 'required',
     },
-    timeout: 60000,
+    excludeCredentials: user.authenticators.map(auth => ({
+      id: auth.credentialID,
+      type: 'public-key',
+    })),
   });
 
   req.session.challenge = options.challenge;
-  console.log('Registration challenge:', options.challenge);
+  console.log('✅ Generated challenge:', options.challenge);
   res.json(options);
 });
 
 app.post('/register-verify', async (req, res) => {
-  const { username, ...body } = req.body;
-  const user = users.find(u => u.username === username);
-  if (!user) return res.status(404).send('User not found');
+  const { username, ...response } = req.body;
+  const user = getUser(username);
+  const expectedChallenge = req.session.challenge;
 
   try {
     const verification = await verifyRegistrationResponse({
-      response: body,
-      expectedChallenge: req.session.challenge,
-      expectedOrigin: 'https://atsh.tech',
-      expectedRPID: 'passkey-backend-6w35.onrender.com',
+      response,
+      expectedChallenge,
+      expectedOrigin: ORIGIN,
+      expectedRPID: RP_ID,
     });
 
-    if (verification.verified && verification.registrationInfo) {
-      const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
+    const { verified, registrationInfo } = verification;
+
+    if (verified && registrationInfo) {
+      const { credentialID, credentialPublicKey, counter } = registrationInfo;
       user.authenticators.push({
-        credentialID: isoBase64URL.fromBuffer(credentialID),
-        publicKey: isoBase64URL.fromBuffer(credentialPublicKey),
+        credentialID,
+        credentialPublicKey,
         counter,
       });
-      console.log('Passkey registered for', username);
-      res.json({ verified: true });
-    } else {
-      res.status(400).send('Registration not verified');
+      console.log('✅ Registered credential for user:', username);
     }
-  } catch (e) {
-    console.error('Register verify error:', e);
-    res.status(400).send('Registration error: ' + e.message);
+
+    res.json({ verified });
+  } catch (err) {
+    console.error('❌ Register verify error:', err);
+    res.status(400).send('Registration failed');
   }
 });
 
+// === Login ===
 app.post('/login-challenge', (req, res) => {
   const { username } = req.body;
-  const user = users.find(u => u.username === username);
-  if (!user || !user.authenticators.length) {
-    return res.status(404).send('No credentials');
+  const user = getUser(username);
+
+  if (!user || user.authenticators.length === 0) {
+    return res.status(404).send('User or credentials not found');
   }
 
   const options = generateAuthenticationOptions({
-    rpID: 'passkey-backend-6w35.onrender.com',
+    rpID: RP_ID,
     userVerification: 'preferred',
-    allowCredentials: user.authenticators.map(a => ({
-      id: a.credentialID,
+    allowCredentials: user.authenticators.map(auth => ({
+      id: auth.credentialID,
+      type: 'public-key',
     })),
-    timeout: 60000,
   });
 
   req.session.challenge = options.challenge;
-  console.log('Login challenge:', options.challenge);
+  console.log('✅ Login challenge sent for user:', username);
   res.json(options);
 });
 
 app.post('/login-verify', async (req, res) => {
-  const { username, ...body } = req.body;
-  const user = users.find(u => u.username === username);
-  if (!user) return res.status(404).send('User not found');
+  const { username, ...response } = req.body;
+  const user = getUser(username);
 
-  const authenticator = user.authenticators.find(a => a.credentialID === body.id);
-  if (!authenticator) return res.status(404).send('Authenticator not found');
+  const cred = user.authenticators.find(
+    auth => auth.credentialID.toString('base64url') === response.id
+  );
+
+  if (!cred) {
+    console.error('❌ Credential not found for:', response.id);
+    return res.status(404).send('Credential not found');
+  }
 
   try {
     const verification = await verifyAuthenticationResponse({
-      response: body,
+      response,
       expectedChallenge: req.session.challenge,
-      expectedOrigin: 'https://atsh.tech',
-      expectedRPID: 'passkey-backend-6w35.onrender.com',
+      expectedOrigin: ORIGIN,
+      expectedRPID: RP_ID,
       authenticator: {
-        credentialID: isoBase64URL.fromBuffer(isoBase64URL.toBytes(authenticator.credentialID)),
-        credentialPublicKey: isoBase64URL.fromBuffer(isoBase64URL.toBytes(authenticator.publicKey)),
-        counter: authenticator.counter,
+        credentialID: cred.credentialID,
+        credentialPublicKey: cred.credentialPublicKey,
+        counter: cred.counter,
       },
     });
 
-    if (verification.verified) {
-      authenticator.counter = verification.authenticationInfo.newCounter;
-      console.log('Login verified for', username);
-      res.json({ verified: true });
-    } else {
-      res.status(400).send('Not verified');
+    const { verified, authenticationInfo } = verification;
+
+    if (verified) {
+      cred.counter = authenticationInfo.newCounter;
+      console.log('✅ Login successful for user:', username);
     }
-  } catch (e) {
-    console.error('Login verify error:', e);
-    res.status(400).send('Login error: ' + e.message);
+
+    res.json({ verified });
+  } catch (err) {
+    console.error('❌ Login verify error:', err);
+    res.status(400).send('Login failed');
   }
 });
 
-app.listen(PORT, () => console.log('Server running on port', PORT));
+app.listen(PORT, () => {
+  console.log(`🚀 Server listening on port ${PORT}`);
+});
