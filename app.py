@@ -5,34 +5,34 @@ import base64
 import json
 from webauthn import (
     generate_registration_options,
-    options_to_json,
-    verify_registration_response,
     generate_authentication_options,
+    verify_registration_response,
     verify_authentication_response,
+    options_to_json,
 )
 from webauthn.helpers.structs import (
-    PublicKeyCredentialDescriptor,
     AuthenticatorSelectionCriteria,
     UserVerificationRequirement,
     RegistrationCredential,
-    AuthenticationCredential
+    AuthenticationCredential,
+    PublicKeyCredentialDescriptor,
 )
 
 app = Flask(__name__)
 CORS(app, origins=["https://atsh-here.github.io"], supports_credentials=True)
 
-# In-memory storage (Use DB in production!)
+# In-memory user storage (use DB in production)
 users = {}
 challenges = {}
 
-# RP configuration
+# RP and frontend config
 RP_ID = "atsh-here.github.io"
 RP_NAME = "Passkey Test"
 ORIGIN = "https://atsh-here.github.io"
 
 @app.route("/")
 def home():
-    return "✅ Passkey Backend Working"
+    return "✅ Passkey backend running!"
 
 @app.route("/register-challenge", methods=["POST"])
 def register_challenge():
@@ -41,10 +41,14 @@ def register_challenge():
     if not username:
         return "Missing username", 400
 
-    user_id = base64.urlsafe_b64encode(os.urandom(16)).rstrip(b"=").decode()
-    challenge = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b"=").decode()
+    # Create user if not exist
+    if username not in users:
+        user_id = base64.urlsafe_b64encode(os.urandom(16)).rstrip(b"=").decode()
+        users[username] = {"id": user_id, "credentials": []}
+    else:
+        user_id = users[username]["id"]
 
-    users[username] = {"id": user_id, "credentials": []}
+    challenge = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b"=").decode()
     challenges[username] = challenge
 
     options = generate_registration_options(
@@ -56,7 +60,9 @@ def register_challenge():
         challenge=challenge.encode(),
         authenticator_selection=AuthenticatorSelectionCriteria(
             user_verification=UserVerificationRequirement.PREFERRED
-        )
+        ),
+        attestation="none",
+        timeout=60000,
     )
 
     return jsonify(json.loads(options_to_json(options)))
@@ -69,12 +75,12 @@ def register_verify():
         return "User not found", 400
 
     try:
-        credential = RegistrationCredential.parse_raw(json.dumps(data))
-        expected_challenge = challenges[username].encode()
+        att_resp = data["attestationResponse"]
+        credential = RegistrationCredential.parse_obj(att_resp)
 
         verification = verify_registration_response(
             credential=credential,
-            expected_challenge=expected_challenge,
+            expected_challenge=challenges[username].encode(),
             expected_origin=ORIGIN,
             expected_rp_id=RP_ID
         )
@@ -82,7 +88,7 @@ def register_verify():
         users[username]["credentials"].append({
             "id": verification.credential_id,
             "public_key": verification.credential_public_key,
-            "sign_count": verification.sign_count
+            "sign_count": verification.sign_count,
         })
 
         return "✅ Registration verified"
@@ -108,7 +114,8 @@ def login_challenge():
         rp_id=RP_ID,
         challenge=challenge.encode(),
         allow_credentials=credentials,
-        user_verification=UserVerificationRequirement.PREFERRED
+        user_verification=UserVerificationRequirement.PREFERRED,
+        timeout=60000,
     )
 
     return jsonify(json.loads(options_to_json(options)))
@@ -121,19 +128,21 @@ def login_verify():
         return "User not found", 400
 
     try:
-        credential = AuthenticationCredential.parse_raw(json.dumps(data))
+        auth_resp = data["authenticationResponse"]
+        credential = AuthenticationCredential.parse_obj(auth_resp)
+
         stored_cred = users[username]["credentials"][0]
-        expected_challenge = challenges[username].encode()
 
         verification = verify_authentication_response(
             credential=credential,
-            expected_challenge=expected_challenge,
-            expected_rp_id=RP_ID,
+            expected_challenge=challenges[username].encode(),
             expected_origin=ORIGIN,
+            expected_rp_id=RP_ID,
             credential_public_key=stored_cred["public_key"],
-            credential_current_sign_count=stored_cred["sign_count"],
+            credential_current_sign_count=stored_cred["sign_count"]
         )
 
+        # Update sign count
         stored_cred["sign_count"] = verification.new_sign_count
         return "✅ Login verified"
     except Exception as e:
