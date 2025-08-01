@@ -77,6 +77,11 @@ async function registerPasskey() {
       credentials: 'include',
     });
 
+    if (!startRes.ok) {
+      const err = await startRes.json();
+      throw new Error(err.error || `Server responded with status ${startRes.status}`);
+    }
+
     const options = await startRes.json();
     if (options.error) throw new Error(options.error);
 
@@ -91,6 +96,11 @@ async function registerPasskey() {
       body: JSON.stringify(attestation),
       credentials: 'include',
     });
+
+    if (!finishRes.ok) {
+      const err = await finishRes.json();
+      throw new Error(err.error || `Server responded with status ${finishRes.status}`);
+    }
 
     const { verified } = await finishRes.json();
     if (verified) {
@@ -119,8 +129,18 @@ async function loginWithPasskey() {
       credentials: 'include',
     });
 
+    if (!startRes.ok) {
+      const err = await startRes.json();
+      throw new Error(err.error || `Server responded with status ${startRes.status}`);
+    }
+
     const options = await startRes.json();
     if (options.error) throw new Error(options.error);
+
+    // It's crucial to check if the user has any passkeys registered.
+    if (!options.allowCredentials || options.allowCredentials.length === 0) {
+      throw new Error('No passkeys found for this user. Please register a passkey first.');
+    }
 
     // Use WebAuthn to get an assertion
     const { startAuthentication } = SimpleWebAuthnBrowser;
@@ -133,6 +153,11 @@ async function loginWithPasskey() {
       body: JSON.stringify(assertion),
       credentials: 'include',
     });
+
+    if (!finishRes.ok) {
+      const err = await finishRes.json();
+      throw new Error(err.error || `Server responded with status ${finishRes.status}`);
+    }
 
     const { verified } = await finishRes.json();
     if (verified) {
