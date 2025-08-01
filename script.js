@@ -1,9 +1,9 @@
-// ✅ script.js — Fully working with WebAuthn + Firebase + UI
+// ✅ Passkey Client Script (script.js)
 
 const { startRegistration, startAuthentication } = SimpleWebAuthnBrowser;
 const BACKEND_URL = "https://passkey-backend-6w35.onrender.com";
 
-// 🟡 Particle Background
+// 🌟 Particle Background
 function createParticles() {
   const container = document.getElementById("particles");
   const count = 50;
@@ -23,15 +23,19 @@ function createParticles() {
   }
 }
 
-// 🟢 Ripple & Hover Effect
+// 💥 Button Ripple Effect
 function addButtonEffects() {
-  document.querySelectorAll(".login-btn").forEach(button => {
-    button.addEventListener("mouseenter", () =>
-      (button.style.transform = "translateY(-3px) scale(1.02)")
-    );
-    button.addEventListener("mouseleave", () =>
-      (button.style.transform = "translateY(0) scale(1)")
-    );
+  const buttons = document.querySelectorAll(".login-btn");
+
+  buttons.forEach(button => {
+    button.addEventListener("mouseenter", () => {
+      button.style.transform = "translateY(-3px) scale(1.02)";
+    });
+
+    button.addEventListener("mouseleave", () => {
+      button.style.transform = "translateY(0) scale(1)";
+    });
+
     button.addEventListener("click", e => {
       const ripple = document.createElement("span");
       const rect = button.getBoundingClientRect();
@@ -55,85 +59,96 @@ function addButtonEffects() {
     });
   });
 
-  const style = document.createElement("style");
-  style.textContent = `@keyframes ripple { to { transform: scale(2); opacity: 0; } }`;
-  document.head.appendChild(style);
+  const rippleKeyframes = document.createElement("style");
+  rippleKeyframes.textContent = `
+    @keyframes ripple {
+      to { transform: scale(2); opacity: 0; }
+    }
+  `;
+  document.head.appendChild(rippleKeyframes);
 }
 
-// 🔐 Register Passkey
+// 🔐 Register with Passkey
 async function registerPasskey() {
-  const username = prompt("👤 Enter username:");
+  const username = prompt("👤 Enter a username:");
   if (!username) return;
 
   try {
-    console.log("[Client] Requesting challenge...");
-    const resp = await fetch(`${BACKEND_URL}/register-challenge`, {
+    console.log("[Client] 🔍 Fetching challenge...");
+    const challengeResp = await fetch(`${BACKEND_URL}/register-challenge`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ username }),
     });
 
-    const options = await resp.json();
-    console.log("[Client] Challenge received:", options);
+    if (!challengeResp.ok) {
+      const errorText = await challengeResp.text();
+      throw new Error(errorText);
+    }
 
-    const attResp = await startRegistration({ optionsJSON: options });
-    console.log("[Client] Registration response:", attResp);
+    const options = await challengeResp.json();
+    console.log("[Client] ✅ Challenge received:", options);
 
+    if (!options.challenge) throw new Error("Challenge missing from server");
+
+    console.log("[Client] 🧠 Starting browser registration...");
+    const attResp = await startRegistration(options);
+    console.log("[Client] ✅ Attestation response:", attResp);
+
+    console.log("[Client] 🔐 Sending attestation to server...");
     const verifyResp = await fetch(`${BACKEND_URL}/register-verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ username, ...attResp }),
     });
 
-    const verifyText = await verifyResp.text();
-    if (!verifyResp.ok) throw new Error(verifyText);
+    const result = await verifyResp.text();
+    if (!verifyResp.ok) throw new Error(result);
 
-    alert("✅ Passkey registration successful!");
+    alert("✅ Passkey registration success!");
   } catch (err) {
     console.error("[Client] ❌ Registration failed:", err);
-    alert("❌ Registration error: " + err.message);
+    alert("❌ Passkey registration failed:\n" + err.message);
   }
 }
 
-// 🔑 Login with Passkey
+// 🔓 Login with Passkey
 async function loginWithPasskeyPrompt() {
-  const username = prompt("👤 Enter username:");
+  const username = prompt("👤 Enter username to login:");
   if (!username) return;
 
   try {
-    const resp = await fetch(`${BACKEND_URL}/login-challenge`, {
+    console.log("[Client] 🔐 Requesting login challenge...");
+    const challengeResp = await fetch(`${BACKEND_URL}/login-challenge`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ username }),
     });
 
-    const options = await resp.json();
-    console.log("[Client] Login challenge received:", options);
+    if (!challengeResp.ok) throw new Error(await challengeResp.text());
+    const options = await challengeResp.json();
+    console.log("[Client] 🔄 Challenge received:", options);
 
-    const authResp = await startAuthentication({ optionsJSON: options });
-    console.log("[Client] Authentication response:", authResp);
+    const authResp = await startAuthentication(options);
+    console.log("[Client] ✅ Authentication response:", authResp);
 
     const verifyResp = await fetch(`${BACKEND_URL}/login-verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify({ username, ...authResp }),
     });
 
-    const verifyText = await verifyResp.text();
-    if (!verifyResp.ok) throw new Error(verifyText);
+    const result = await verifyResp.text();
+    if (!verifyResp.ok) throw new Error(result);
 
-    alert("✅ Logged in with passkey!");
+    alert("✅ Logged in with Passkey!");
   } catch (err) {
     console.error("[Client] ❌ Login failed:", err);
     alert("❌ Login error: " + err.message);
   }
 }
 
-// 🔑 Firebase + Google Auth
+// ✨ Firebase Auth (Optional)
 function handleAuth() {
   const auth = firebase.auth();
   const form = document.getElementById("login-form");
@@ -163,8 +178,7 @@ function handleAuth() {
     }
   });
 
-  const googleBtn = document.getElementById("google-login");
-  googleBtn.addEventListener("click", async () => {
+  document.getElementById("google-login").addEventListener("click", async () => {
     const provider = new firebase.auth.GoogleAuthProvider();
     try {
       await auth.signInWithPopup(provider);
@@ -175,13 +189,14 @@ function handleAuth() {
   });
 }
 
-// 🔁 Init
+// 🧠 Bind global functions
+window.registerPasskey = registerPasskey;
+window.loginWithPasskeyPrompt = loginWithPasskeyPrompt;
+
+// ⚙️ On Load
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("🎮 script.js ready");
   createParticles();
   addButtonEffects();
   handleAuth();
 });
-
-// 🌐 Make accessible to HTML onclick
-window.registerPasskey = registerPasskey;
-window.loginWithPasskeyPrompt = loginWithPasskeyPrompt;
