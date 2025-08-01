@@ -18,7 +18,7 @@ from webauthn.helpers.structs import (
 import secrets
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://atsh-here.github.io"]) 
 
 # ⚙️ CONFIG
 RP_NAME = "Cyberpunk Access Terminal"
