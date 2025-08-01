@@ -78,7 +78,7 @@ app.post('/register/start', (req, res) => {
   const options = generateRegistrationOptions({
     rpName: 'Cyberpunk Login',
     rpID,
-    userID: user.id,
+    userID: Buffer.from(user.id, 'utf8'),
     userName: user.username,
     attestationType: 'none',
     excludeCredentials: user.authenticators.map(auth => ({
