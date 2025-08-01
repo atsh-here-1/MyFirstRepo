@@ -31,7 +31,7 @@ const users = new Map(); // username => { id, credentials, challenge }
 
 function getUser(username) {
   if (!users.has(username)) {
-    const id = Buffer.from(username).toString('base64url');
+    const id = Buffer.from(username, 'utf8'); // Now a Buffer
     users.set(username, { id, credentials: [] });
   }
   return users.get(username);
