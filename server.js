@@ -63,34 +63,54 @@ const expectedOrigin = process.env.EXPECTED_ORIGIN || `http://${rpID}:${port}`;
 
 app.post('/register/start', (req, res) => {
   const { email } = req.body;
+  console.log(`[REGISTER/START] Received request for email: ${email}`);
 
   if (!email) {
+    console.error('[REGISTER/START] FAIL: Email is missing.');
     return res.status(400).json({ error: 'Email is required' });
   }
 
   const existingUser = users[email];
+  console.log(`[REGISTER/START] Existing user check:`, existingUser ? `Found user with ${existingUser.authenticators.length} authenticators.` : 'No user found.');
 
   if (existingUser && existingUser.authenticators.length > 0) {
+    console.error(`[REGISTER/START] FAIL: User ${email} already exists and has passkeys.`);
     return res.status(400).json({ error: 'User already exists. Please log in.' });
   }
 
-  const options = generateRegistrationOptions({
+  const userID = Buffer.from(email, 'utf8');
+  const excludeCredentials = existingUser ? existingUser.authenticators.map(auth => ({
+    id: auth.credentialID,
+    type: 'public-key',
+    transports: auth.transports,
+  })) : [];
+
+  const optionsPayload = {
     rpName: 'Cyberpunk Login',
     rpID,
-    userID: Buffer.from(email, 'utf8'),
+    userID: userID,
     userName: email,
     attestationType: 'none',
-    excludeCredentials: existingUser ? existingUser.authenticators.map(auth => ({
-      id: auth.credentialID,
-      type: 'public-key',
-      transports: auth.transports,
-    })) : [],
-  });
+    excludeCredentials,
+  };
+
+  console.log('[REGISTER/START] Generating registration options with payload:', JSON.stringify(optionsPayload, null, 2));
+
+  const options = generateRegistrationOptions(optionsPayload);
+
+  console.log('[REGISTER/START] Generated options from @simplewebauthn/server:', JSON.stringify(options, null, 2));
 
   req.session.challenge = options.challenge;
   req.session.email = email;
 
-  req.session.save(() => {
+  console.log(`[REGISTER/START] Storing challenge in session: ${options.challenge}`);
+
+  req.session.save((err) => {
+    if (err) {
+      console.error('[REGISTER/START] SESSION SAVE ERROR:', err);
+      return res.status(500).json({ error: 'Failed to save session.' });
+    }
+    console.log('[REGISTER/START] Session saved successfully. Sending options response.');
     res.json(options);
   });
 });
