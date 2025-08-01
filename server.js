@@ -55,11 +55,19 @@ const writeUsers = (data) => {
 };
 
 // Load users from the file
-const users = readUsers();
+let users = readUsers();
 
-const rpID = process.env.RP_ID || 'localhost'; // Your domain
+const rpID = process.env.RP_ID;
 const port = process.env.PORT || 3000;
-const expectedOrigin = process.env.EXPECTED_ORIGIN || `http://${rpID}:${port}`;
+const expectedOrigin = process.env.EXPECTED_ORIGIN;
+
+if (!rpID || !expectedOrigin) {
+  console.error('FATAL ERROR: RP_ID and EXPECTED_ORIGIN environment variables are not set.');
+  console.error('Please set them in your Render dashboard.');
+  console.error('RP_ID should be your backend domain (e.g., passkey-backend-6w35.onrender.com)');
+  console.error('EXPECTED_ORIGIN should be your frontend URL (e.g., https://atsh.tech)');
+  process.exit(1); // Stop the server if config is missing
+}
 
 app.post('/register/start', (req, res) => {
   const { email } = req.body;
