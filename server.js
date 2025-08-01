@@ -52,9 +52,9 @@ const writeUsers = (data) => {
 // Load users from the file
 const users = readUsers();
 
-const rpID = 'atsh.tech'; // Your domain
+const rpID = process.env.RP_ID || 'localhost'; // Your domain
 const port = process.env.PORT || 3000;
-const origin = `https://${rpID}`;
+const expectedOrigin = process.env.EXPECTED_ORIGIN || `http://${rpID}:${port}`;
 
 app.post('/register/start', (req, res) => {
   const { email } = req.body;
@@ -88,9 +88,12 @@ app.post('/register/start', (req, res) => {
     })),
   });
 
-  req.session = { challenge: options.challenge, email };
+  req.session.challenge = options.challenge;
+  req.session.email = email;
 
-  res.json(options);
+  req.session.save(() => {
+    res.json(options);
+  });
 });
 
 app.post('/register/finish', async (req, res) => {
@@ -101,7 +104,7 @@ app.post('/register/finish', async (req, res) => {
     const verification = await verifyRegistrationResponse({
       response: req.body,
       expectedChallenge: req.session.challenge,
-      expectedOrigin: origin,
+      expectedOrigin,
       expectedRPID: rpID,
     });
 
@@ -144,9 +147,12 @@ app.post('/login/start', (req, res) => {
     userVerification: 'preferred',
   });
 
-  req.session = { challenge: options.challenge, email };
+  req.session.challenge = options.challenge;
+  req.session.email = email;
 
-  res.json(options);
+  req.session.save(() => {
+    res.json(options);
+  });
 });
 
 app.post('/login/finish', async (req, res) => {
@@ -164,7 +170,7 @@ app.post('/login/finish', async (req, res) => {
         const verification = await verifyAuthenticationResponse({
             response: req.body,
             expectedChallenge: req.session.challenge,
-            expectedOrigin: origin,
+            expectedOrigin,
             expectedRPID: rpID,
             authenticator,
         });
@@ -210,5 +216,5 @@ app.post('/register/email', (req, res) => {
 
 
 app.listen(port, () => {
-  console.log(`Server listening on ${origin}`);
+  console.log(`Server listening on port ${port}. RP_ID: ${rpID}, Origin: ${expectedOrigin}`);
 });
