@@ -68,29 +68,23 @@ app.post('/register/start', (req, res) => {
     return res.status(400).json({ error: 'Email is required' });
   }
 
-  if (users[email]) {
-    return res.status(400).json({ error: 'User already exists' });
-  }
+  const existingUser = users[email];
 
-  const user = {
-    id: email,
-    username: email,
-    authenticators: [],
-  };
-  users[email] = user;
-  writeUsers(users); // Save users to file
+  if (existingUser && existingUser.authenticators.length > 0) {
+    return res.status(400).json({ error: 'User already exists. Please log in.' });
+  }
 
   const options = generateRegistrationOptions({
     rpName: 'Cyberpunk Login',
     rpID,
-    userID: Buffer.from(user.id, 'utf8'),
-    userName: user.username,
+    userID: Buffer.from(email, 'utf8'),
+    userName: email,
     attestationType: 'none',
-    excludeCredentials: user.authenticators.map(auth => ({
+    excludeCredentials: existingUser ? existingUser.authenticators.map(auth => ({
       id: auth.credentialID,
       type: 'public-key',
       transports: auth.transports,
-    })),
+    })) : [],
   });
 
   req.session.challenge = options.challenge;
@@ -102,18 +96,16 @@ app.post('/register/start', (req, res) => {
 });
 
 app.post('/register/finish', async (req, res) => {
-  const { email } = req.session;
-  const user = users[email];
+  const { email, challenge } = req.session;
 
-  // Check if session and challenge exist
-  if (!req.session || !req.session.challenge) {
-    return res.status(400).json({ error: 'Session challenge not found. Please start registration again.' });
+  if (!email || !challenge) {
+    return res.status(400).json({ error: 'Session data missing. Please start registration again.' });
   }
 
   try {
     const verification = await verifyRegistrationResponse({
       response: req.body,
-      expectedChallenge: req.session.challenge,
+      expectedChallenge: challenge,
       expectedOrigin,
       expectedRPID: rpID,
     });
@@ -123,6 +115,17 @@ app.post('/register/finish', async (req, res) => {
     if (verified && registrationInfo) {
       const { credentialPublicKey, credentialID, counter } = registrationInfo;
 
+      // Find user or create new user
+      let user = users[email];
+      if (!user) {
+        user = {
+          id: email,
+          username: email,
+          authenticators: [],
+        };
+        users[email] = user;
+      }
+
       const newAuthenticator = {
         credentialID,
         credentialPublicKey,
@@ -130,12 +133,19 @@ app.post('/register/finish', async (req, res) => {
         transports: req.body.response.transports,
       };
       user.authenticators.push(newAuthenticator);
-      writeUsers(users); // Save users to file
-    }
+      
+      writeUsers(users); // Save the updated user record
 
-    res.json({ verified });
+      // Clear the challenge from the session
+      req.session.challenge = undefined;
+      req.session.save(() => {
+        res.json({ verified: true });
+      });
+    } else {
+      res.status(400).json({ verified: false, error: 'Verification failed.' });
+    }
   } catch (error) {
-    console.error(error);
+    console.error('Error during /register/finish:', error);
     res.status(400).json({ error: error.message });
   }
 });
