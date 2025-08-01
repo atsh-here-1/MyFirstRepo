@@ -32,40 +32,35 @@ function getUser(username) {
   return users.get(username);
 }
 
-// ---------- Passkey Registration Challenge ----------
 app.post('/register-challenge', (req, res) => {
   const { username } = req.body;
   console.log("📩 /register-challenge for:", username);
 
   if (!username || typeof username !== 'string') {
+    console.error("❌ Invalid username:", username);
     return res.status(400).send('Invalid username');
   }
 
   const user = getUser(username);
-  const userID = Buffer.from(username, 'utf-8');
+  const userIdBuffer = Buffer.from(username, 'utf8');
 
   const options = generateRegistrationOptions({
     rpName,
     rpID,
-    userID,
+    userID: userIdBuffer, // ✅ Required to generate challenge properly
     userName: username,
     attestationType: 'none',
     authenticatorSelection: {
-      residentKey: 'preferred',
       userVerification: 'preferred',
     },
-    excludeCredentials: user.credentials.map(cred => ({
-      id: cred.credentialID,
-      type: 'public-key',
-    })),
-    timeout: 60000,
   });
 
   user.currentChallenge = options.challenge;
-  console.log("✅ Challenge generated:", options.challenge);
 
+  console.log("✅ Challenge generated:", options.challenge);
   res.json(options);
 });
+
 
 // ---------- Passkey Registration Verification ----------
 app.post('/register-verify', async (req, res) => {
