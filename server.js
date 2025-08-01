@@ -86,7 +86,11 @@ app.post('/register/start', (req, res) => {
     return res.status(400).json({ error: 'User already exists. Please log in.' });
   }
 
-  const userID = Buffer.from(email, 'utf8');
+  // HARDCODED FOR DEBUGGING: Using a static but unique ID to isolate the problem.
+  const userID = Buffer.from(`static-user-id-${email}`, 'utf8');
+  console.log(`[REGISTER/START] DEBUG: Hardcoded userID to: ${userID.toString('utf8')}`);
+  // END DEBUGGING
+
   const excludeCredentials = existingUser ? existingUser.authenticators.map(auth => ({
     id: auth.credentialID,
     type: 'public-key',
@@ -96,8 +100,8 @@ app.post('/register/start', (req, res) => {
   const optionsPayload = {
     rpName: 'Cyberpunk Login',
     rpID,
-    userID: userID,
-    userName: email,
+    userID: userID, // Using the hardcoded userID for the payload
+    userName: email, // Still using the real email for userName
     attestationType: 'none',
     excludeCredentials,
   };
