@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cyberpunk Login - Access Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -11,18 +11,14 @@
   <!-- Firebase SDK -->
   <script defer src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script defer src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
-
-  <!-- Firebase Init -->
   <script defer src="firebase-init.js"></script>
-  
-  <!-- Your logic -->
-  <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser@8.5.2/dist/simplewebauthn-browser.umd.min.js"></script>
 
+  <!-- SimpleWebAuthn Browser UMD build from CDN -->
+  <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
 
+  <!-- Main script -->
   <script defer src="script.js"></script>
 </head>
-
 <body>
   <div class="particles" id="particles"></div>
 
@@ -37,7 +33,7 @@
         <button class="login-btn google" id="google-login">
           <i class="fab fa-google"></i> Continue with Google
         </button>
-        <button class="login-btn passkey" onclick="loginWithPasskey()">
+        <button class="login-btn passkey" onclick="registerPasskey()">
           <i class="fas fa-fingerprint"></i> Use Passkey
         </button>
       </div>
@@ -54,13 +50,10 @@
         <button type="submit" class="login-btn">
           <i class="fas fa-sign-in-alt"></i> Access System
         </button>
-        <div class="forgot-password">
-          <a href="#" class="forgot-link">Forgot password?</a>
-        </div>
       </form>
 
       <div class="footer-text">
-        Don't have an account? <a href="#" class="footer-link" onclick="registerPasskey()">Create Neural Link</a>
+        Don't have an account? <a href="#" onclick="registerPasskey()">Create Neural Link</a>
       </div>
     </div>
   </div>
