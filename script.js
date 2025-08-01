@@ -104,7 +104,7 @@ function handleAuth() {
 
 // === 🔐 WebAuthn (Passkey) Login/Register ===
 const SimpleWebAuthnBrowser = window.SimpleWebAuthnBrowser;
-const BACKEND_URL = "https://your-backend.onrender.com"; // ← Replace this
+const BACKEND_URL = "https://passkey-backend-6w35.onrender.com"; // ← Replace this
 
 async function loginWithPasskey() {
   const username = prompt("🔑 Enter your username for passkey login:");
