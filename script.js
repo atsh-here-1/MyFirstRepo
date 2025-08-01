@@ -58,28 +58,43 @@ function addButtonEffects() {
 
 async function registerPasskey() {
   const username = prompt("👤 Enter username:");
+  console.log("[Client] Username entered:", username);
   if (!username) return;
 
   try {
+    console.log("[Client] Sending /register-challenge request...");
     const resp = await fetch(`${BACKEND_URL}/register-challenge`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username }),
     });
-    if (!resp.ok) throw new Error(await resp.text());
+
+    console.log("[Client] Response status:", resp.status);
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(err);
+    }
+
     const options = await resp.json();
+    console.log("[Client] Received registration options:", options);
+
     const attResp = await startRegistration({ optionsJSON: options });
+    console.log("[Client] startRegistration response:", attResp);
 
     const verifyResp = await fetch(`${BACKEND_URL}/register-verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, ...attResp }),
     });
-    if (!verifyResp.ok) throw new Error(await verifyResp.text());
+    console.log("[Client] /register-verify status:", verifyResp.status);
 
+    const verifyText = await verifyResp.text();
+    if (!verifyResp.ok) throw new Error(verifyText);
+
+    console.log("[Client] Registration verify response:", verifyText);
     alert("✅ Passkey registration success!");
   } catch (err) {
-    console.error("Registration failed", err);
+    console.error("[Client] Registration failed:", err);
     alert("❌ Registration error: " + err.message);
   }
 }
