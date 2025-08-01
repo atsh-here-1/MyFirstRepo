@@ -1,4 +1,4 @@
-// ✅ server.js (Backend with WebAuthn + Logs)
+// ✅ server.js (Backend with WebAuthn + Fixes + Buffer-safe fields)
 const express = require('express');
 const cors = require('cors');
 const { 
@@ -7,6 +7,7 @@ const {
   generateAuthenticationOptions, 
   verifyAuthenticationResponse 
 } = require('@simplewebauthn/server');
+const { isoBase64URL } = require('@simplewebauthn/server/helpers');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -54,6 +55,11 @@ app.post('/register-challenge', (req, res) => {
   });
 
   user.currentChallenge = options.challenge;
+
+  // Convert Buffer fields to base64url so frontend understands
+  options.challenge = isoBase64URL(options.challenge);
+  options.user.id = isoBase64URL(options.user.id);
+
   res.json(options);
 });
 
@@ -104,6 +110,14 @@ app.post('/login-challenge', (req, res) => {
   });
 
   user.currentChallenge = options.challenge;
+
+  // Convert buffer fields
+  options.challenge = isoBase64URL(options.challenge);
+  options.allowCredentials = options.allowCredentials.map(cred => ({
+    ...cred,
+    id: isoBase64URL(cred.id),
+  }));
+
   res.json(options);
 });
 
@@ -113,7 +127,7 @@ app.post('/login-verify', async (req, res) => {
   const user = getUser(username);
   console.log("🔐 /login-verify for:", username);
 
-  const cred = user.credentials.find(c => c.id.toString('base64url') === body.id);
+  const cred = user.credentials.find(c => isoBase64URL(c.id) === body.id);
   if (!cred) return res.status(404).send("Credential not found");
 
   try {
