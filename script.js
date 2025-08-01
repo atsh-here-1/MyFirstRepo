@@ -60,10 +60,6 @@ function addButtonEffects() {
   document.head.appendChild(rippleKeyframes);
 }
 
-// ...existing code...
-  document.head.appendChild(rippleKeyframes);
-}
-
 // ✅ Passkey Registration and Login
 async function registerPasskey() {
   const email = document.getElementById('email').value;
