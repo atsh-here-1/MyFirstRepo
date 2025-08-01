@@ -1,134 +1,140 @@
-# app.py
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+import os
+import base64
+import json
 from webauthn import (
     generate_registration_options,
+    options_to_json,
     verify_registration_response,
     generate_authentication_options,
-    verify_authentication_response
+    verify_authentication_response,
 )
 from webauthn.helpers.structs import (
-    PublicKeyCredentialRpEntity,
+    PublicKeyCredentialDescriptor,
     AuthenticatorSelectionCriteria,
     UserVerificationRequirement,
-    PublicKeyCredentialDescriptor,
     RegistrationCredential,
     AuthenticationCredential
 )
-import secrets
 
 app = Flask(__name__)
-CORS(app, origins=["https://atsh-here.github.io"]) 
+CORS(app, origins=["https://atsh-here.github.io"], supports_credentials=True)
 
-# ⚙️ CONFIG
-RP_NAME = "Cyberpunk Access Terminal"
-RP_ID = "atsh-here.github.io"
-ORIGIN = "https://atsh-here.github.io"
-
-# In-memory user store (🧠 replace with real DB later)
+# In-memory storage (Use DB in production!)
 users = {}
 challenges = {}
 
+# RP configuration
+RP_ID = "atsh-here.github.io"
+RP_NAME = "Passkey Test"
+ORIGIN = "https://atsh-here.github.io"
+
+@app.route("/")
+def home():
+    return "✅ Passkey Backend Working"
+
 @app.route("/register-challenge", methods=["POST"])
 def register_challenge():
-    username = request.json.get("username")
+    data = request.get_json()
+    username = data.get("username")
     if not username:
-        return "Username required", 400
+        return "Missing username", 400
 
-    user_id = secrets.token_hex(16)
-    challenge = secrets.token_urlsafe(32)
-
-    options = generate_registration_options(
-        rp=PublicKeyCredentialRpEntity(id=RP_ID, name=RP_NAME),
-        user={"id": user_id.encode(), "name": username, "display_name": username},
-        authenticator_selection=AuthenticatorSelectionCriteria(
-            user_verification=UserVerificationRequirement.PREFERRED
-        ),
-        challenge=challenge.encode()
-    )
+    user_id = base64.urlsafe_b64encode(os.urandom(16)).rstrip(b"=").decode()
+    challenge = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b"=").decode()
 
     users[username] = {"id": user_id, "credentials": []}
     challenges[username] = challenge
 
-    return jsonify(options.model_dump())
+    options = generate_registration_options(
+        rp_id=RP_ID,
+        rp_name=RP_NAME,
+        user_id=user_id.encode(),
+        user_name=username,
+        user_display_name=username,
+        challenge=challenge.encode(),
+        authenticator_selection=AuthenticatorSelectionCriteria(
+            user_verification=UserVerificationRequirement.PREFERRED
+        )
+    )
+
+    return jsonify(json.loads(options_to_json(options)))
 
 @app.route("/register-verify", methods=["POST"])
 def register_verify():
-    try:
-        data = request.get_json()
-        username = data.get("username")
-        if username not in users:
-            return "User not found", 400
+    data = request.get_json()
+    username = data.get("username")
+    if username not in users:
+        return "User not found", 400
 
-        credential = RegistrationCredential.parse_obj(data)
+    try:
+        credential = RegistrationCredential.parse_raw(json.dumps(data))
+        expected_challenge = challenges[username].encode()
+
         verification = verify_registration_response(
             credential=credential,
-            expected_challenge=challenges[username],
+            expected_challenge=expected_challenge,
             expected_origin=ORIGIN,
-            expected_rp_id=RP_ID,
-            require_user_verification=True
+            expected_rp_id=RP_ID
         )
 
         users[username]["credentials"].append({
-            "credential_id": verification.credential_id,
+            "id": verification.credential_id,
             "public_key": verification.credential_public_key,
             "sign_count": verification.sign_count
         })
 
-        return "✅ Passkey registered", 200
+        return "✅ Registration verified"
     except Exception as e:
-        return f"❌ Registration failed: {str(e)}", 400
+        return f"❌ Verification failed: {str(e)}", 400
 
 @app.route("/login-challenge", methods=["POST"])
 def login_challenge():
-    username = request.json.get("username")
-    if username not in users:
-        return "User not found", 400
+    data = request.get_json()
+    username = data.get("username")
+    if username not in users or not users[username]["credentials"]:
+        return "User not found or not registered", 400
 
-    challenge = secrets.token_urlsafe(32)
+    challenge = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b"=").decode()
     challenges[username] = challenge
 
-    allow_credentials = [
-        PublicKeyCredentialDescriptor(id=c["credential_id"])
-        for c in users[username]["credentials"]
+    credentials = [
+        PublicKeyCredentialDescriptor(id=cred["id"])
+        for cred in users[username]["credentials"]
     ]
 
     options = generate_authentication_options(
         rp_id=RP_ID,
         challenge=challenge.encode(),
-        allow_credentials=allow_credentials,
+        allow_credentials=credentials,
         user_verification=UserVerificationRequirement.PREFERRED
     )
 
-    return jsonify(options.model_dump())
+    return jsonify(json.loads(options_to_json(options)))
 
 @app.route("/login-verify", methods=["POST"])
 def login_verify():
-    try:
-        data = request.get_json()
-        username = data.get("username")
-        if username not in users:
-            return "User not found", 400
+    data = request.get_json()
+    username = data.get("username")
+    if username not in users:
+        return "User not found", 400
 
-        credential = AuthenticationCredential.parse_obj(data)
-        stored = users[username]["credentials"][0]
+    try:
+        credential = AuthenticationCredential.parse_raw(json.dumps(data))
+        stored_cred = users[username]["credentials"][0]
+        expected_challenge = challenges[username].encode()
 
         verification = verify_authentication_response(
             credential=credential,
-            expected_challenge=challenges[username],
-            expected_origin=ORIGIN,
+            expected_challenge=expected_challenge,
             expected_rp_id=RP_ID,
-            credential_public_key=stored["public_key"],
-            credential_current_sign_count=stored["sign_count"],
-            require_user_verification=True
+            expected_origin=ORIGIN,
+            credential_public_key=stored_cred["public_key"],
+            credential_current_sign_count=stored_cred["sign_count"],
         )
 
-        stored["sign_count"] = verification.new_sign_count
-        return "✅ Passkey login successful", 200
-
+        stored_cred["sign_count"] = verification.new_sign_count
+        return "✅ Login verified"
     except Exception as e:
         return f"❌ Login failed: {str(e)}", 400
-
-@app.route("/")
-def home():
-    return "🔐 Passkey Flask Backend is running!"
