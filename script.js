@@ -1,10 +1,6 @@
 // ✅ script.js (Frontend for Passkey + UI effects + Firebase auth)
 
-import {
-  startRegistration,
-  startAuthentication
-} from '@simplewebauthn/browser';
-
+const { startRegistration, startAuthentication } = SimpleWebAuthnBrowser;
 const BACKEND_URL = "https://passkey-backend-6w35.onrender.com";
 
 function createParticles() {
@@ -146,11 +142,12 @@ function handleAuth() {
   });
 }
 
+// Expose for inline usage
+window.registerPasskey = registerPasskey;
+
+// Initialize
 document.addEventListener("DOMContentLoaded", () => {
   createParticles();
   addButtonEffects();
   handleAuth();
-
-  const registerBtn = document.getElementById("register-passkey-btn");
-  if (registerBtn) registerBtn.addEventListener("click", registerPasskey);
 });
