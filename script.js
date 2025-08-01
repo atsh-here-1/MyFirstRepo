@@ -1,4 +1,4 @@
-// ✨ Particle + UI Effects
+// === ✨ Particle + UI Effects ===
 function createParticles() {
   const container = document.getElementById("particles");
   const count = 50;
@@ -60,121 +60,8 @@ function addButtonEffects() {
   document.head.appendChild(rippleKeyframes);
 }
 
-// ✅ Passkey Registration and Login
-async function registerPasskey() {
-  const email = document.getElementById('email').value;
-  if (!email) {
-    alert('Please enter an email to register a passkey.');
-    return;
-  }
-
-  try {
-    // Start registration
-    const startRes = await fetch('https://passkey-backend-6w35.onrender.com/register/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-      credentials: 'include',
-    });
-
-    if (!startRes.ok) {
-      const err = await startRes.json();
-      throw new Error(err.error || `Server responded with status ${startRes.status}`);
-    }
-
-    const options = await startRes.json();
-    if (options.error) throw new Error(options.error);
-
-    // Use WebAuthn to create a credential
-    const { startRegistration } = SimpleWebAuthnBrowser;
-    const attestation = await startRegistration(options);
-
-    // Finish registration
-    const finishRes = await fetch('https://passkey-backend-6w35.onrender.com/register/finish', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(attestation),
-      credentials: 'include',
-    });
-
-    if (!finishRes.ok) {
-      const err = await finishRes.json();
-      throw new Error(err.error || `Server responded with status ${finishRes.status}`);
-    }
-
-    const { verified } = await finishRes.json();
-    if (verified) {
-      alert('Passkey registered successfully!');
-    } else {
-      alert('Passkey registration failed.');
-    }
-  } catch (error) {
-    alert('Error: ' + error.message);
-  }
-}
-
-async function loginWithPasskey() {
-  const email = document.getElementById('email').value;
-  if (!email) {
-    alert('Please enter your email to log in with a passkey.');
-    return;
-  }
-
-  try {
-    // Start authentication
-    const startRes = await fetch('https://passkey-backend-6w35.onrender.com/login/start', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-      credentials: 'include',
-    });
-
-    if (!startRes.ok) {
-      const err = await startRes.json();
-      throw new Error(err.error || `Server responded with status ${startRes.status}`);
-    }
-
-    const options = await startRes.json();
-    if (options.error) throw new Error(options.error);
-
-    // It's crucial to check if the user has any passkeys registered.
-    if (!options.allowCredentials || options.allowCredentials.length === 0) {
-      throw new Error('No passkeys found for this user. Please register a passkey first.');
-    }
-
-    // Use WebAuthn to get an assertion
-    const { startAuthentication } = SimpleWebAuthnBrowser;
-    const assertion = await startAuthentication(options);
-
-    // Finish authentication
-    const finishRes = await fetch('https://passkey-backend-6w35.onrender.com/login/finish', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(assertion),
-      credentials: 'include',
-    });
-
-    if (!finishRes.ok) {
-      const err = await finishRes.json();
-      throw new Error(err.error || `Server responded with status ${finishRes.status}`);
-    }
-
-    const { verified } = await finishRes.json();
-    if (verified) {
-      alert('Logged in successfully with passkey!');
-    } else {
-      alert('Passkey login failed.');
-    }
-  } catch (error) {
-    alert('Error: ' + error.message);
-  }
-}
-
-
-// ✅ Firebase Email & Google Auth
+// === ✅ Firebase Email & Google Auth ===
 function handleAuth() {
-// ...existing code...
-
   const auth = firebase.auth();
   const form = document.getElementById("login-form");
 
@@ -215,7 +102,69 @@ function handleAuth() {
   });
 }
 
-//  Init All
+// === 🔐 WebAuthn (Passkey) Login/Register ===
+const SimpleWebAuthnBrowser = window.SimpleWebAuthnBrowser;
+const BACKEND_URL = "https://your-backend.onrender.com"; // ← Replace this
+
+async function loginWithPasskey() {
+  const username = prompt("🔑 Enter your username for passkey login:");
+
+  if (!username) return;
+
+  try {
+    const resp = await fetch(`${BACKEND_URL}/login-challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    });
+
+    const options = await resp.json();
+    const authResponse = await SimpleWebAuthnBrowser.startAuthentication(options);
+
+    const verification = await fetch(`${BACKEND_URL}/login-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, ...authResponse }),
+    });
+
+    const result = await verification.text();
+    alert("✅ Login: " + result);
+  } catch (err) {
+    console.error(err);
+    alert("❌ Passkey login failed");
+  }
+}
+
+async function registerPasskey() {
+  const username = prompt("👤 Choose a username to register your passkey:");
+
+  if (!username) return;
+
+  try {
+    const resp = await fetch(`${BACKEND_URL}/register-challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    });
+
+    const options = await resp.json();
+    const attResp = await SimpleWebAuthnBrowser.startRegistration(options);
+
+    const verification = await fetch(`${BACKEND_URL}/register-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, ...attResp }),
+    });
+
+    const result = await verification.text();
+    alert("✅ Registered: " + result);
+  } catch (err) {
+    console.error(err);
+    alert("❌ Passkey registration failed");
+  }
+}
+
+// === 🚀 Init All on DOM Load ==
 document.addEventListener("DOMContentLoaded", () => {
   createParticles();
   addButtonEffects();
