@@ -60,8 +60,96 @@ function addButtonEffects() {
   document.head.appendChild(rippleKeyframes);
 }
 
+// ...existing code...
+  document.head.appendChild(rippleKeyframes);
+}
+
+// ✅ Passkey Registration and Login
+async function registerPasskey() {
+  const email = document.getElementById('email').value;
+  if (!email) {
+    alert('Please enter an email to register a passkey.');
+    return;
+  }
+
+  try {
+    // Start registration
+    const startRes = await fetch('http://localhost:3000/register/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    const options = await startRes.json();
+    if (options.error) throw new Error(options.error);
+
+    // Use WebAuthn to create a credential
+    const { startRegistration } = SimpleWebAuthnBrowser;
+    const attestation = await startRegistration(options);
+
+    // Finish registration
+    const finishRes = await fetch('http://localhost:3000/register/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(attestation),
+    });
+
+    const { verified } = await finishRes.json();
+    if (verified) {
+      alert('Passkey registered successfully!');
+    } else {
+      alert('Passkey registration failed.');
+    }
+  } catch (error) {
+    alert('Error: ' + error.message);
+  }
+}
+
+async function loginWithPasskey() {
+  const email = document.getElementById('email').value;
+  if (!email) {
+    alert('Please enter your email to log in with a passkey.');
+    return;
+  }
+
+  try {
+    // Start authentication
+    const startRes = await fetch('http://localhost:3000/login/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    const options = await startRes.json();
+    if (options.error) throw new Error(options.error);
+
+    // Use WebAuthn to get an assertion
+    const { startAuthentication } = SimpleWebAuthnBrowser;
+    const assertion = await startAuthentication(options);
+
+    // Finish authentication
+    const finishRes = await fetch('http://localhost:3000/login/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(assertion),
+    });
+
+    const { verified } = await finishRes.json();
+    if (verified) {
+      alert('Logged in successfully with passkey!');
+    } else {
+      alert('Passkey login failed.');
+    }
+  } catch (error) {
+    alert('Error: ' + error.message);
+  }
+}
+
+
 // ✅ Firebase Email & Google Auth
 function handleAuth() {
+// ...existing code...
+
   const auth = firebase.auth();
   const form = document.getElementById("login-form");
 
