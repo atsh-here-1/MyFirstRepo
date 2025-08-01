@@ -100,6 +100,11 @@ app.post('/register/finish', async (req, res) => {
   const { email } = req.session;
   const user = users[email];
 
+  // Check if session and challenge exist
+  if (!req.session || !req.session.challenge) {
+    return res.status(400).json({ error: 'Session challenge not found. Please start registration again.' });
+  }
+
   try {
     const verification = await verifyRegistrationResponse({
       response: req.body,
@@ -161,6 +166,11 @@ app.post('/login/finish', async (req, res) => {
     const authenticator = user.authenticators.find(
         auth => auth.credentialID === req.body.id
     );
+
+    // Check if session and challenge exist
+    if (!req.session || !req.session.challenge) {
+      return res.status(400).json({ error: 'Session challenge not found. Please start login again.' });
+    }
 
     if (!authenticator) {
         return res.status(400).json({ error: 'Authenticator not found' });
