@@ -1,4 +1,4 @@
-// Passkey + Firebase + Cyberpunk UI
+// ✅ script.js — Complete and corrected for WebAuthn v11+ API
 
 const { startRegistration, startAuthentication } = SimpleWebAuthnBrowser;
 const BACKEND_URL = "https://passkey-backend-6w35.onrender.com";
@@ -51,16 +51,13 @@ function addButtonEffects() {
       setTimeout(() => ripple.remove(), 600);
     });
   });
-
   const style = document.createElement("style");
-  style.textContent = `
-    @keyframes ripple { to { transform: scale(2); opacity: 0; } }
-  `;
+  style.textContent = `@keyframes ripple { to { transform: scale(2); opacity: 0; } }`;
   document.head.appendChild(style);
 }
 
 async function registerPasskey() {
-  const username = prompt("👤 Enter a username:");
+  const username = prompt("👤 Enter username:");
   if (!username) return;
 
   try {
@@ -69,23 +66,50 @@ async function registerPasskey() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username }),
     });
-    if (!resp.ok) {
-      throw new Error(await resp.text());
-    }
+    if (!resp.ok) throw new Error(await resp.text());
     const options = await resp.json();
-    const attResp = await startRegistration(options);
+    const attResp = await startRegistration({ optionsJSON: options });
+
     const verifyResp = await fetch(`${BACKEND_URL}/register-verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, ...attResp }),
     });
-    if (!verifyResp.ok) {
-      throw new Error(await verifyResp.text());
-    }
-    alert("✅ Passkey registered successfully!");
+    if (!verifyResp.ok) throw new Error(await verifyResp.text());
+
+    alert("✅ Passkey registration success!");
   } catch (err) {
-    console.error("Passkey registration failed:", err);
+    console.error("Registration failed", err);
     alert("❌ Registration error: " + err.message);
+  }
+}
+
+async function loginWithPasskeyPrompt() {
+  const username = prompt("👤 Enter username to login:");
+  if (!username) return;
+
+  try {
+    const resp = await fetch(`${BACKEND_URL}/login-challenge`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username }),
+    });
+    if (!resp.ok) throw new Error(await resp.text());
+    const options = await resp.json();
+
+    const authResp = await startAuthentication({ optionsJSON: options });
+
+    const verifyResp = await fetch(`${BACKEND_URL}/login-verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, ...authResp }),
+    });
+    if (!verifyResp.ok) throw new Error(await verifyResp.text());
+
+    alert("✅ Passkey login success!");
+  } catch (err) {
+    console.error("Login failed", err);
+    alert("❌ Login error: " + err.message);
   }
 }
 
@@ -98,6 +122,7 @@ function handleAuth() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
     const button = form.querySelector("button");
+
     try {
       button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
       button.disabled = true;
@@ -118,9 +143,8 @@ function handleAuth() {
   });
 
   document.getElementById("google-login").addEventListener("click", async () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
     try {
-      await auth.signInWithPopup(provider);
+      await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
       alert("✅ Google login success!");
     } catch (err) {
       alert("❌ Google login failed: " + err.message);
@@ -128,8 +152,8 @@ function handleAuth() {
   });
 }
 
-// Expose function globally
 window.registerPasskey = registerPasskey;
+window.loginWithPasskeyPrompt = loginWithPasskeyPrompt;
 
 document.addEventListener("DOMContentLoaded", () => {
   createParticles();
