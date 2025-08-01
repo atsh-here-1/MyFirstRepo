@@ -1,4 +1,7 @@
-// === ✨ Particle + UI Effects ===
+// ✅ script.js (Frontend for Passkey + UI effects + Firebase auth)
+
+const BACKEND_URL = "https://passkey-backend-6w35.onrender.com";
+
 function createParticles() {
   const container = document.getElementById("particles");
   const count = 50;
@@ -60,7 +63,43 @@ function addButtonEffects() {
   document.head.appendChild(rippleKeyframes);
 }
 
-// === ✅ Firebase Email & Google Auth ===
+async function registerPasskey() {
+  const username = prompt("👤 Enter a username:");
+  if (!username) return;
+
+  try {
+    console.log("[Client] 🔍 Fetching challenge...");
+    const resp = await fetch(`${BACKEND_URL}/register-challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username }),
+    });
+
+    if (!resp.ok) throw new Error("Failed to get challenge");
+    const options = await resp.json();
+    console.log("[Client] ✅ Got challenge:", options);
+
+    console.log("[Client] 🧠 Starting browser passkey registration...");
+    const attResp = await SimpleWebAuthnBrowser.startRegistration(options);
+    console.log("[Client] ✅ Passkey created:", attResp);
+
+    console.log("[Client] 🔐 Sending attestation to server...");
+    const verify = await fetch(`${BACKEND_URL}/register-verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, ...attResp }),
+    });
+
+    const result = await verify.text();
+    if (!verify.ok) throw new Error(result);
+
+    alert("✅ Passkey registration success: " + result);
+  } catch (err) {
+    console.error("[Client] ❌ Passkey registration failed:", err);
+    alert("❌ Passkey registration failed:\n" + err.message);
+  }
+}
+
 function handleAuth() {
   const auth = firebase.auth();
   const form = document.getElementById("login-form");
@@ -102,69 +141,6 @@ function handleAuth() {
   });
 }
 
-// === 🔐 WebAuthn (Passkey) Login/Register ===
-const SimpleWebAuthnBrowser = window.SimpleWebAuthnBrowser;
-const BACKEND_URL = "https://passkey-backend-6w35.onrender.com"; // ← Replace this
-
-async function loginWithPasskey() {
-  const username = prompt("🔑 Enter your username for passkey login:");
-
-  if (!username) return;
-
-  try {
-    const resp = await fetch(`${BACKEND_URL}/login-challenge`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username }),
-    });
-
-    const options = await resp.json();
-    const authResponse = await SimpleWebAuthnBrowser.startAuthentication(options);
-
-    const verification = await fetch(`${BACKEND_URL}/login-verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, ...authResponse }),
-    });
-
-    const result = await verification.text();
-    alert("✅ Login: " + result);
-  } catch (err) {
-    console.error(err);
-    alert("❌ Passkey login failed");
-  }
-}
-
-async function registerPasskey() {
-  const username = prompt("👤 Choose a username to register your passkey:");
-
-  if (!username) return;
-
-  try {
-    const resp = await fetch(`${BACKEND_URL}/register-challenge`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username }),
-    });
-
-    const options = await resp.json();
-    const attResp = await SimpleWebAuthnBrowser.startRegistration(options);
-
-    const verification = await fetch(`${BACKEND_URL}/register-verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, ...attResp }),
-    });
-
-    const result = await verification.text();
-    alert("✅ Registered: " + result);
-  } catch (err) {
-    console.error(err);
-    alert("❌ Passkey registration failed");
-  }
-}
-
-// === 🚀 Init All on DOM Load ==
 document.addEventListener("DOMContentLoaded", () => {
   createParticles();
   addButtonEffects();
