@@ -1,21 +1,21 @@
 import express from 'express';
-import session from 'express-session';
 import cors from 'cors';
+import session from 'express-session';
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
+import { isoUint8Array } from '@simplewebauthn/server/helpers';
 
 const app = express();
 const PORT = process.env.PORT || 10000;
-
 const RP_NAME = 'Atsh Cyberpunk Terminal';
 const RP_ID = 'passkey-backend-6w35.onrender.com';
 const ORIGIN = 'https://atsh.tech';
 
-// Memory store (replace with DB in production)
+// In-memory user store
 const users = new Map();
 
 // Middleware
@@ -27,7 +27,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(session({
-  secret: 'cyberpunk-super-secret',
+  secret: 'supersecret-key',
   resave: false,
   saveUninitialized: true,
   cookie: { maxAge: 3600000 }
@@ -40,108 +40,95 @@ function getUser(username) {
       username,
       authenticators: []
     });
-    console.log(`🆕 Created new user: ${username}`);
+    console.log(`🆕 New user created: ${username}`);
   }
   return users.get(username);
 }
 
-// === Register ===
+// Registration challenge
 app.post('/register-challenge', (req, res) => {
   const { username } = req.body;
-  console.log('📩 /register-challenge for:', username);
-
-  if (!username) return res.status(400).send('Missing username');
-
   const user = getUser(username);
+  const userID = isoUint8Array.fromUTF8String(user.id);
 
   const options = generateRegistrationOptions({
     rpName: RP_NAME,
     rpID: RP_ID,
-    userID: user.id,
+    userID,
     userName: username,
     attestationType: 'none',
     authenticatorSelection: {
       userVerification: 'preferred',
-      residentKey: 'required',
+      residentKey: 'required'
     },
-    excludeCredentials: user.authenticators.map(auth => ({
-      id: auth.credentialID,
-      type: 'public-key',
-    })),
+    excludeCredentials: user.authenticators.map(a => ({
+      id: a.credentialID,
+      type: 'public-key'
+    }))
   });
 
   req.session.challenge = options.challenge;
-  console.log('✅ Generated challenge:', options.challenge);
+  console.log('📩 register_challenge:', options.challenge);
   res.json(options);
 });
 
+// Registration verification
 app.post('/register-verify', async (req, res) => {
   const { username, ...response } = req.body;
   const user = getUser(username);
-  const expectedChallenge = req.session.challenge;
 
   try {
     const verification = await verifyRegistrationResponse({
       response,
-      expectedChallenge,
+      expectedChallenge: req.session.challenge,
       expectedOrigin: ORIGIN,
-      expectedRPID: RP_ID,
+      expectedRPID: RP_ID
     });
 
     const { verified, registrationInfo } = verification;
-
     if (verified && registrationInfo) {
       const { credentialID, credentialPublicKey, counter } = registrationInfo;
-      user.authenticators.push({
-        credentialID,
-        credentialPublicKey,
-        counter,
-      });
-      console.log('✅ Registered credential for user:', username);
+      user.authenticators.push({ credentialID, credentialPublicKey, counter });
+      console.log('✅ Passkey registered for:', username);
     }
 
     res.json({ verified });
   } catch (err) {
-    console.error('❌ Register verify error:', err);
-    res.status(400).send('Registration failed');
+    console.error('Registration failed:', err);
+    res.status(400).send('Registration error');
   }
 });
 
-// === Login ===
+// Login challenge
 app.post('/login-challenge', (req, res) => {
   const { username } = req.body;
   const user = getUser(username);
 
-  if (!user || user.authenticators.length === 0) {
-    return res.status(404).send('User or credentials not found');
+  if (!user.authenticators.length) {
+    return res.status(404).send('No registered passkeys');
   }
 
   const options = generateAuthenticationOptions({
     rpID: RP_ID,
     userVerification: 'preferred',
-    allowCredentials: user.authenticators.map(auth => ({
-      id: auth.credentialID,
-      type: 'public-key',
-    })),
+    allowCredentials: user.authenticators.map(a => ({
+      id: a.credentialID,
+      type: 'public-key'
+    }))
   });
 
   req.session.challenge = options.challenge;
-  console.log('✅ Login challenge sent for user:', username);
+  console.log('📩 login_challenge:', options.challenge);
   res.json(options);
 });
 
+// Login verification
 app.post('/login-verify', async (req, res) => {
   const { username, ...response } = req.body;
   const user = getUser(username);
+  const cred = user.authenticators.find(a => a.credentialID.toString('base64url') === response.id);
 
-  const cred = user.authenticators.find(
-    auth => auth.credentialID.toString('base64url') === response.id
-  );
-
-  if (!cred) {
-    console.error('❌ Credential not found for:', response.id);
-    return res.status(404).send('Credential not found');
-  }
+  if (!cred) return res.status(404).send('Unknown credential');
 
   try {
     const verification = await verifyAuthenticationResponse({
@@ -152,24 +139,20 @@ app.post('/login-verify', async (req, res) => {
       authenticator: {
         credentialID: cred.credentialID,
         credentialPublicKey: cred.credentialPublicKey,
-        counter: cred.counter,
-      },
+        counter: cred.counter
+      }
     });
 
-    const { verified, authenticationInfo } = verification;
-
-    if (verified) {
-      cred.counter = authenticationInfo.newCounter;
-      console.log('✅ Login successful for user:', username);
+    if (verification.verified) {
+      cred.counter = verification.authenticationInfo.newCounter;
+      console.log('✅ Login success for:', username);
     }
 
-    res.json({ verified });
+    res.json({ verified: verification.verified });
   } catch (err) {
-    console.error('❌ Login verify error:', err);
-    res.status(400).send('Login failed');
+    console.error('Login failed:', err);
+    res.status(400).send('Login error');
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server listening on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Auth server listening on port ${PORT}`));
