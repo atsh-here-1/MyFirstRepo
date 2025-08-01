@@ -16,6 +16,7 @@
   <script defer src="firebase-init.js"></script>
   
   <!-- Your logic -->
+  <script src="https://cdn.jsdelivr.net/npm/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
   <script defer src="script.js"></script>
 </head>
 
@@ -33,7 +34,7 @@
         <button class="login-btn google" id="google-login">
           <i class="fab fa-google"></i> Continue with Google
         </button>
-        <button class="login-btn passkey">
+        <button class="login-btn passkey" onclick="loginWithPasskey()">
           <i class="fas fa-fingerprint"></i> Use Passkey
         </button>
       </div>
@@ -56,7 +57,7 @@
       </form>
 
       <div class="footer-text">
-        Don't have an account? <a href="#" class="footer-link">Create Neural Link</a>
+        Don't have an account? <a href="#" class="footer-link" onclick="registerPasskey()">Create Neural Link</a>
       </div>
     </div>
   </div>
