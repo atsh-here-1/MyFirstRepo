@@ -1,5 +1,10 @@
 // ✅ script.js (Frontend for Passkey + UI effects + Firebase auth)
 
+import {
+  startRegistration,
+  startAuthentication
+} from '@simplewebauthn/browser';
+
 const BACKEND_URL = "https://passkey-backend-6w35.onrender.com";
 
 function createParticles() {
@@ -80,7 +85,7 @@ async function registerPasskey() {
     console.log("[Client] ✅ Got challenge:", options);
 
     console.log("[Client] 🧠 Starting browser passkey registration...");
-    const attResp = await SimpleWebAuthnBrowser.startRegistration(options);
+    const attResp = await startRegistration(options);
     console.log("[Client] ✅ Passkey created:", attResp);
 
     console.log("[Client] 🔐 Sending attestation to server...");
@@ -145,4 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
   createParticles();
   addButtonEffects();
   handleAuth();
+
+  const registerBtn = document.getElementById("register-passkey-btn");
+  if (registerBtn) registerBtn.addEventListener("click", registerPasskey);
 });
