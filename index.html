@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Passkey Test</title>
+</head>
+<body>
+  <h2>🔐 Passkey Test Page</h2>
+  <button onclick="registerPasskey()">Register Passkey</button>
+  <button onclick="loginWithPasskeyPrompt()">Login with Passkey</button>
+
+  <script src="https://unpkg.com/@simplewebauthn/browser/dist/bundle/index.umd.min.js"></script>
+  <script>
+    const { startRegistration, startAuthentication } = SimpleWebAuthnBrowser;
+    const BACKEND_URL = "https://5000-username-yourrepo-xyz.github.dev"; // Replace with your Flask Codespace preview URL
+
+    async function registerPasskey() {
+      const username = prompt("Enter a username to register:");
+      if (!username) return;
+
+      const challengeResp = await fetch(`${BACKEND_URL}/register-challenge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
+      });
+      const options = await challengeResp.json();
+      const attResp = await startRegistration(options);
+
+      const verifyResp = await fetch(`${BACKEND_URL}/register-verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, ...attResp })
+      });
+      const result = await verifyResp.text();
+      alert(result);
+    }
+
+    async function loginWithPasskeyPrompt() {
+      const username = prompt("Enter your username to login:");
+      if (!username) return;
+
+      const challengeResp = await fetch(`${BACKEND_URL}/login-challenge`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username })
+      });
+      const options = await challengeResp.json();
+      const authResp = await startAuthentication(options);
+
+      const verifyResp = await fetch(`${BACKEND_URL}/login-verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, ...authResp })
+      });
+      const result = await verifyResp.text();
+      alert(result);
+    }
+  </script>
+</body>
+</html>
