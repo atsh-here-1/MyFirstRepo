@@ -74,6 +74,7 @@ async function registerPasskey() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
+      credentials: 'include',
     });
 
     const options = await startRes.json();
@@ -88,6 +89,7 @@ async function registerPasskey() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(attestation),
+      credentials: 'include',
     });
 
     const { verified } = await finishRes.json();
@@ -114,6 +116,7 @@ async function loginWithPasskey() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
+      credentials: 'include',
     });
 
     const options = await startRes.json();
@@ -128,6 +131,7 @@ async function loginWithPasskey() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(assertion),
+      credentials: 'include',
     });
 
     const { verified } = await finishRes.json();
