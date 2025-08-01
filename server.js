@@ -32,31 +32,31 @@ function getUser(username) {
   return users.get(username);
 }
 
-app.post('/register-challenge', (req, res) => {
+// ---------- Passkey Registration Challenge ----------
+app.post('/register-challenge', async (req, res) => {
   const { username } = req.body;
-  console.log("📩 /register-challenge for:", username);
-
-  if (!username || typeof username !== 'string') {
-    console.error("❌ Invalid username:", username);
-    return res.status(400).send('Invalid username');
+  const user = users.find(u => u.username === username);
+  if (!user) {
+    return res.status(404).send('User not found');
   }
 
-  const user = getUser(username);
-  const userIdBuffer = Buffer.from(username, 'utf8');
-
-  const options = generateRegistrationOptions({
-    rpName,
-    rpID,
-    userID: userIdBuffer, // ✅ Required to generate challenge properly
-    userName: username,
+  const options = await generateRegistrationOptions({
+    rpName: 'My Awesome App',
+    rpID: 'localhost', // or your domain like 'atsh.tech'
+    userID: Buffer.from(user.id, 'utf8'), // ✅ FIXED HERE
+    userName: user.username,
     attestationType: 'none',
+    excludeCredentials: user.authenticators.map(auth => ({
+      id: base64url.decode(auth.credentialID),
+      type: 'public-key',
+    })),
     authenticatorSelection: {
       userVerification: 'preferred',
+      residentKey: 'required',
     },
   });
 
-  user.currentChallenge = options.challenge;
-
+  req.session.challenge = options.challenge;
   console.log("✅ Challenge generated:", options.challenge);
   res.json(options);
 });
