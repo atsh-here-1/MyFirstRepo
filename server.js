@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
+const FileStore = require('session-file-store')(session);
 const fs = require('fs');
 const {
   generateRegistrationOptions,
@@ -16,6 +17,10 @@ app.use(cors({
   credentials: true,
 }));
 app.use(session({
+  store: new FileStore({
+    path: './sessions', // The directory where session files will be stored
+    retries: 1, // Number of retries for reading/writing session files
+  }),
   secret: 'a-secure-secret-key', // Please change this to a strong, random secret
   resave: false,
   saveUninitialized: true,
