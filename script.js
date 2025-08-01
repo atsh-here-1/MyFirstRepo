@@ -70,7 +70,7 @@ async function registerPasskey() {
 
   try {
     // Start registration
-    const startRes = await fetch('http://localhost:3000/register/start', {
+    const startRes = await fetch('https://passkey-backend-6w35.onrender.com/register/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -84,7 +84,7 @@ async function registerPasskey() {
     const attestation = await startRegistration(options);
 
     // Finish registration
-    const finishRes = await fetch('http://localhost:3000/register/finish', {
+    const finishRes = await fetch('https://passkey-backend-6w35.onrender.com/register/finish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(attestation),
@@ -110,7 +110,7 @@ async function loginWithPasskey() {
 
   try {
     // Start authentication
-    const startRes = await fetch('http://localhost:3000/login/start', {
+    const startRes = await fetch('https://passkey-backend-6w35.onrender.com/login/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
@@ -124,7 +124,7 @@ async function loginWithPasskey() {
     const assertion = await startAuthentication(options);
 
     // Finish authentication
-    const finishRes = await fetch('http://localhost:3000/login/finish', {
+    const finishRes = await fetch('https://passkey-backend-6w35.onrender.com/login/finish', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(assertion),
@@ -186,99 +186,9 @@ function handleAuth() {
   });
 }
 
-// 🔐 Decode base64url → Uint8Array
-function base64urlToBuffer(base64url) {
-  const padding = '='.repeat((4 - base64url.length % 4) % 4);
-  const base64 = (base64url + padding).replace(/-/g, '+').replace(/_/g, '/');
-  return Uint8Array.from(atob(base64), c => c.charCodeAt(0));
-}
-
-// 🔐 WebAuthn Registration & Login
-function handlePasskey() {
-  const passkeyBtn = document.querySelector(".passkey");
-  const emailInput = document.getElementById("email");
-  const backend = "https://passkey-backend-6w35.onrender.com";
-
-  passkeyBtn.addEventListener("click", async () => {
-    const email = emailInput.value.trim();
-    if (!email) return alert("Please enter your email first.");
-
-    const isLogin = confirm("Do you want to log in using passkey?\nClick Cancel to register.");
-
-    try {
-      if (isLogin) {
-        // 🟢 LOGIN FLOW
-        const loginOptionsRes = await fetch(`${backend}/login/options`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-        const options = await loginOptionsRes.json();
-
-        options.challenge = base64urlToBuffer(options.challenge);
-        options.allowCredentials = options.allowCredentials.map(cred => ({
-          ...cred,
-          id: base64urlToBuffer(cred.id),
-        }));
-
-        const assertion = await navigator.credentials.get({ publicKey: options });
-
-        const loginRes = await fetch(`${backend}/login/verify`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            authResp: assertion,
-          }),
-        });
-
-        const result = await loginRes.json();
-        if (result.verified) {
-          alert("✅ Logged in with Passkey!");
-        } else {
-          alert("❌ Passkey login failed");
-        }
-      } else {
-        // 🟡 REGISTRATION FLOW
-        const regOptionsRes = await fetch(`${backend}/register/options`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-
-        const options = await regOptionsRes.json();
-        options.challenge = base64urlToBuffer(options.challenge);
-        options.user.id = base64urlToBuffer(options.user.id);
-
-        const credential = await navigator.credentials.create({ publicKey: options });
-
-        const regRes = await fetch(`${backend}/register/verify`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email,
-            attResp: credential,
-          }),
-        });
-
-        const result = await regRes.json();
-        if (result.verified) {
-          alert("🎉 Passkey Registered!");
-        } else {
-          alert("❌ Passkey registration failed");
-        }
-      }
-    } catch (err) {
-      console.error("❌ WebAuthn error (client side):", err);
-      alert("Something went wrong with Passkey setup.");
-    }
-  });
-}
-
-// 🚀 Init All
+//  Init All
 document.addEventListener("DOMContentLoaded", () => {
   createParticles();
   addButtonEffects();
   handleAuth();
-  handlePasskey();
 });
