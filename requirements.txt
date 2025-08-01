@@ -1,0 +1,4 @@
+Flask
+webauthn
+flask-cors
+gunicorn
