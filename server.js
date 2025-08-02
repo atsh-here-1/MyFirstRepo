@@ -1,189 +1,122 @@
-import express from 'express';
-import session from 'express-session';
-import cors from 'cors';
-import base64url from 'base64url';
-import {
-  generateRegistrationOptions,
-  verifyRegistrationResponse,
-  generateAuthenticationOptions,
-  verifyAuthenticationResponse
-} from '@simplewebauthn/server';
+const express = require('express')
+const crypto = require("node:crypto");
+const { 
+    generateRegistrationOptions, 
+    verifyRegistrationResponse, 
+    generateAuthenticationOptions, 
+    verifyAuthenticationResponse 
+} = require('@simplewebauthn/server')
 
+
+if (!globalThis.crypto) {
+    globalThis.crypto = crypto;
+}
+
+const PORT = 3000
 const app = express();
-const port = process.env.PORT || 3000;
 
-// For demo: in-memory "DB"
-const users = [];
+app.use(express.static('./public'))
+app.use(express.json())
 
-// CORS: Allow GitHub Pages frontend to access
-const FRONTEND_ORIGIN = 'https://atsh-here.github.io'; // Replace with your actual GitHub Pages origin
-const RP_ID = 'myfirstrepo-ga0q.onrender.com'; // Replace with your Render backend domain (without https)
-const ORIGIN = `https://${FRONTEND_ORIGIN.replace('https://', '')}`;
+// States
+const userStore = {}
+const challengeStore = {}
 
-// Middleware
-app.use(cors({
-  origin: FRONTEND_ORIGIN,
-  credentials: true,
-}));
-app.use(express.json());
-app.use(session({
-  secret: 'supersecret-key',
-  saveUninitialized: true,
-  resave: false,
-  cookie: {
-    secure: true, // Required on HTTPS
-    httpOnly: true,
-    sameSite: 'Lax',
-    maxAge: 1000 * 60 * 30, // 30 mins
-  }
-}));
-
-// ----------- ROUTES -------------
-
-// 🧾 Register username/password
 app.post('/register', (req, res) => {
-  const { username, password } = req.body;
-  if (users.find(u => u.username === username)) {
-    return res.status(409).send('User already exists');
-  }
-  const user = {
-    id: `user-${Date.now()}`,
-    username,
-    password,
-    authenticators: []
-  };
-  users.push(user);
-  res.send('User registered successfully');
-});
+    const { username, password } = req.body
+    const id = `user_${Date.now()}`
 
-// 🔐 Passkey Registration Challenge
-app.post('/register-challenge', async (req, res) => {
-  const { username } = req.body;
-  const user = users.find(u => u.username === username);
-  if (!user) return res.status(404).send('User not found');
-
-  const options = await generateRegistrationOptions({
-    rpName: 'WebAuthn Demo',
-    rpID: RP_ID,
-    userID: user.id,
-    userName: user.username,
-    attestationType: 'none',
-    excludeCredentials: user.authenticators.map(a => ({
-      id: base64url.toBuffer(a.credentialID),
-      type: 'public-key'
-    })),
-    authenticatorSelection: {
-      userVerification: 'preferred',
-      residentKey: 'required',
+    const user = {
+        id,
+        username,
+        password
     }
-  });
 
-  req.session.challenge = options.challenge;
-  res.json(options);
-});
+    userStore[id] = user
 
-// ✅ Passkey Registration Verify
+    console.log(`Register successfull`, userStore[id])
+
+    return res.json({ id })
+
+})
+
+app.post('/register-challenge', async (req, res) => {
+    const { userId } = req.body
+
+    if (!userStore[userId]) return res.status(404).json({ error: 'user not found!' })
+
+    const user = userStore[userId]
+
+    const challengePayload = await generateRegistrationOptions({
+        rpID: 'localhost',
+        rpName: 'My Localhost Machine',
+        attestationType: 'none',
+        userName: user.username,
+        timeout: 30_000,
+    })
+
+    challengeStore[userId] = challengePayload.challenge
+
+    return res.json({ options: challengePayload })
+
+})
+
 app.post('/register-verify', async (req, res) => {
-  const { username, response } = req.body;
-  const user = users.find(u => u.username === username);
-  if (!user) return res.status(404).send('User not found');
+    const { userId, cred }  = req.body
+    
+    if (!userStore[userId]) return res.status(404).json({ error: 'user not found!' })
 
-  let verification;
-  try {
-    verification = await verifyRegistrationResponse({
-      response,
-      expectedChallenge: req.session.challenge,
-      expectedOrigin: ORIGIN,
-      expectedRPID: RP_ID,
-    });
-  } catch (err) {
-    console.error(err);
-    return res.status(400).send('Registration verification failed');
-  }
+    const user = userStore[userId]
+    const challenge = challengeStore[userId]
 
-  const { verified, registrationInfo } = verification;
+    const verificationResult = await verifyRegistrationResponse({
+        expectedChallenge: challenge,
+        expectedOrigin: 'http://localhost:3000',
+        expectedRPID: 'localhost',
+        response: cred,
+    })
 
-  if (verified) {
-    const { credentialID, credentialPublicKey, counter } = registrationInfo;
-    const newAuth = {
-      credentialID: base64url.encode(credentialID),
-      credentialPublicKey: base64url.encode(credentialPublicKey),
-      counter
-    };
-    user.authenticators.push(newAuth);
-    res.send('Passkey registered successfully');
-  } else {
-    res.status(400).send('Registration not verified');
-  }
-});
+    if (!verificationResult.verified) return res.json({ error: 'could not verify' });
+    userStore[userId].passkey = verificationResult.registrationInfo
 
-// 🧪 Passkey Login Challenge
+    return res.json({ verified: true })
+
+})
+
 app.post('/login-challenge', async (req, res) => {
-  const { username } = req.body;
-  const user = users.find(u => u.username === username);
-  if (!user || user.authenticators.length === 0) {
-    return res.status(404).send('User or passkey not found');
-  }
+    const { userId } = req.body
+    if (!userStore[userId]) return res.status(404).json({ error: 'user not found!' })
+    
+    const opts = await generateAuthenticationOptions({
+        rpID: 'localhost',
+    })
 
-  const options = await generateAuthenticationOptions({
-    rpID: RP_ID,
-    allowCredentials: user.authenticators.map(a => ({
-      id: base64url.toBuffer(a.credentialID),
-      type: 'public-key',
-    })),
-    userVerification: 'preferred',
-  });
+    challengeStore[userId] = opts.challenge
 
-  req.session.challenge = options.challenge;
-  res.json(options);
-});
+    return res.json({ options: opts })
+})
 
-// 🔓 Passkey Login Verify
+
 app.post('/login-verify', async (req, res) => {
-  const { username, response } = req.body;
-  const user = users.find(u => u.username === username);
-  if (!user) return res.status(404).send('User not found');
+    const { userId, cred }  = req.body
 
-  const authenticator = user.authenticators.find(
-    a => a.credentialID === response.id
-  );
-  if (!authenticator) return res.status(404).send('Passkey not found');
+    if (!userStore[userId]) return res.status(404).json({ error: 'user not found!' })
+    const user = userStore[userId]
+    const challenge = challengeStore[userId]
 
-  let verification;
-  try {
-    verification = await verifyAuthenticationResponse({
-      response,
-      expectedChallenge: req.session.challenge,
-      expectedOrigin: ORIGIN,
-      expectedRPID: RP_ID,
-      authenticator: {
-        credentialID: base64url.toBuffer(authenticator.credentialID),
-        credentialPublicKey: base64url.toBuffer(authenticator.credentialPublicKey),
-        counter: authenticator.counter,
-      }
-    });
-  } catch (err) {
-    console.error(err);
-    return res.status(400).send('Login verification failed');
-  }
+    const result = await verifyAuthenticationResponse({
+        expectedChallenge: challenge,
+        expectedOrigin: 'http://localhost:3000',
+        expectedRPID: 'localhost',
+        response: cred,
+        authenticator: user.passkey
+    })
 
-  const { verified, authenticationInfo } = verification;
+    if (!result.verified) return res.json({ error: 'something went wrong' })
+    
+    // Login the user: Session, Cookies, JWT
+    return res.json({ success: true, userId })
+})
 
-  if (verified) {
-    authenticator.counter = authenticationInfo.newCounter;
-    req.session.loggedIn = true;
-    req.session.username = username;
-    res.send('Authentication successful');
-  } else {
-    res.status(400).send('Authentication failed');
-  }
-});
 
-// Health check
-app.get('/', (req, res) => {
-  res.send('✅ Backend is running');
-});
-
-app.listen(port, () => {
-  console.log(`✅ Server running on port ${port}`);
-});
+app.listen(PORT, () => console.log(`Server started on PORT:${PORT}`))
