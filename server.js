@@ -16,7 +16,7 @@ const port = process.env.PORT || 3000;
 const users = [];
 
 // CORS: Allow GitHub Pages frontend to access
-const FRONTEND_ORIGIN = 'https://atsh-here.github.io/frontendTestPasskey/'; // Replace with your actual GitHub Pages origin
+const FRONTEND_ORIGIN = 'https://atsh-here.github.io'; // Replace with your actual GitHub Pages origin
 const RP_ID = 'myfirstrepo-ga0q.onrender.com'; // Replace with your Render backend domain (without https)
 const ORIGIN = `https://${FRONTEND_ORIGIN.replace('https://', '')}`;
 
