@@ -1,7 +1,7 @@
 // ✅ Passkey Client Script (script.js)
 
 const { startRegistration, startAuthentication } = SimpleWebAuthnBrowser;
-const BACKEND_URL = "https://passkey-backend-6w35.onrender.com";
+const BACKEND_URL = "http://localhost:8000";
 
 // 🌟 Particle Background
 function createParticles() {
@@ -70,16 +70,9 @@ function addButtonEffects() {
 
 // 🔐 Register with Passkey
 async function registerPasskey() {
-  const username = prompt("👤 Enter a username:");
-  if (!username) return;
-
   try {
     console.log("[Client] 🔍 Fetching challenge...");
-    const challengeResp = await fetch(`${BACKEND_URL}/register-challenge`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username }),
-    });
+    const challengeResp = await fetch(`${BACKEND_URL}/generate-registration-options`);
 
     if (!challengeResp.ok) {
       const errorText = await challengeResp.text();
@@ -96,14 +89,14 @@ async function registerPasskey() {
     console.log("[Client] ✅ Attestation response:", attResp);
 
     console.log("[Client] 🔐 Sending attestation to server...");
-    const verifyResp = await fetch(`${BACKEND_URL}/register-verify`, {
+    const verifyResp = await fetch(`${BACKEND_URL}/verify-registration`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, ...attResp }),
+      body: JSON.stringify(attResp),
     });
 
-    const result = await verifyResp.text();
-    if (!verifyResp.ok) throw new Error(result);
+    const result = await verifyResp.json();
+    if (!verifyResp.ok || !result.verified) throw new Error(JSON.stringify(result));
 
     alert("✅ Passkey registration success!");
   } catch (err) {
@@ -114,16 +107,9 @@ async function registerPasskey() {
 
 // 🔓 Login with Passkey
 async function loginWithPasskeyPrompt() {
-  const username = prompt("👤 Enter username to login:");
-  if (!username) return;
-
   try {
     console.log("[Client] 🔐 Requesting login challenge...");
-    const challengeResp = await fetch(`${BACKEND_URL}/login-challenge`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username }),
-    });
+    const challengeResp = await fetch(`${BACKEND_URL}/generate-authentication-options`);
 
     if (!challengeResp.ok) throw new Error(await challengeResp.text());
     const options = await challengeResp.json();
@@ -132,14 +118,14 @@ async function loginWithPasskeyPrompt() {
     const authResp = await startAuthentication(options);
     console.log("[Client] ✅ Authentication response:", authResp);
 
-    const verifyResp = await fetch(`${BACKEND_URL}/login-verify`, {
+    const verifyResp = await fetch(`${BACKEND_URL}/verify-authentication`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, ...authResp }),
+      body: JSON.stringify(authResp),
     });
 
-    const result = await verifyResp.text();
-    if (!verifyResp.ok) throw new Error(result);
+    const result = await verifyResp.json();
+    if (!verifyResp.ok || !result.verified) throw new Error(JSON.stringify(result));
 
     alert("✅ Logged in with Passkey!");
   } catch (err) {
