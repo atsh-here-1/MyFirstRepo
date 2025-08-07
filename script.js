@@ -106,7 +106,7 @@ async function registerPasskey() {
 }
 
 // 🔓 Login with Passkey
-async function loginWithPasskeyPrompt() {
+async function loginWithPasskey() {
   try {
     console.log("[Client] 🔐 Requesting login challenge...");
     const challengeResp = await fetch(`${BACKEND_URL}/generate-authentication-options`);
@@ -177,7 +177,7 @@ function handleAuth() {
 
 // 🧠 Bind global functions
 window.registerPasskey = registerPasskey;
-window.loginWithPasskeyPrompt = loginWithPasskeyPrompt;
+window.loginWithPasskey = loginWithPasskey;
 
 // ⚙️ On Load
 document.addEventListener("DOMContentLoaded", () => {
