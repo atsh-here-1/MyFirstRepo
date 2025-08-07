@@ -314,7 +314,7 @@ cert
 } else {
   const host = '127.0.0.1';
   const port = 8000;
-  expectedOrigin = `http://localhost:${port}`;
+  expectedOrigin = `http://localhost:3000`;
 
   http.createServer(app).listen(port, host, () => {
     console.log(`🚀 Server ready at ${expectedOrigin} (${host}:${port})`);
