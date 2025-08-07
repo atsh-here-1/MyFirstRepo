@@ -57,8 +57,7 @@ app.use(
     resave: false,
     cookie: {
       maxAge: 86400000,
-      httpOnly: true, // Ensure to not expose session cookies to clientside scri
-pts
+      httpOnly: true, // Ensure to not expose session cookies to clientside scripts
     },
     store: new MemoryStore({
       checkPeriod: 86_400_000, // prune expired entries every 24h
@@ -66,43 +65,24 @@ pts
   }),
 );
 
-/**
- * If the words "metadata statements" mean anything to you, you'll want to enabl
-e this route. It
- * contains an example of a more complex deployment of SimpleWebAuthn with suppo
-rt enabled for the
- * FIDO Metadata Service. This enables greater control over the types of authent
-icators that can
- * interact with the Rely Party (a.k.a. "RP", a.k.a. "this server").
- */
-if (ENABLE_CONFORMANCE === 'true') {
-  import('./fido-conformance').then(
-    ({ fidoRouteSuffix, fidoConformanceRouter }) => {
-      app.use(fidoRouteSuffix, fidoConformanceRouter);
-    },
-  );
+declare module 'express-session' {
+  interface SessionData {
+    currentChallenge?: string;
+  }
 }
 
 /**
- * RP ID represents the "scope" of websites on which a credential should be usab
-le. The Origin
+ * RP ID represents the "scope" of websites on which a credential should be usable. The Origin
  * represents the expected URL from which registration or authentication occurs.
  */
 export const rpID = RP_ID;
-// This value is set at the bottom of page as part of server initialization (the
- empty string is
-// to appease TypeScript until we determine the expected origin based on whether
- or not HTTPS
-// support is enabled)
+// This value is set at the bottom of page as part of server initialization
 export let expectedOrigin = '';
 
 /**
- * 2FA and Passwordless WebAuthn flows expect you to be able to uniquely identif
-y the user that
- * performs registration or authentication. The user ID you specify here should
-be your internal,
- * _unique_ ID for that user (uuid, etc...). Avoid using identifying information
- here, like email
+ * 2FA and Passwordless WebAuthn flows expect you to be able to uniquely identify the user that
+ * performs registration or authentication. The user ID you specify here should be your internal,
+ * _unique_ ID for that user (uuid, etc...). Avoid using identifying information here, like email
  * addresses, as it may be stored within the credential.
  *
  * Here, the example server assumes the following user has completed login:
@@ -125,8 +105,7 @@ app.get('/generate-registration-options', async (req, res) => {
 
   const {
     /**
-     * The username can be a human-readable name, email, etc... as it is intende
-d only for display.
+     * The username can be a human-readable name, email, etc... as it is intended only for display.
      */
     username,
     credentials,
@@ -139,12 +118,9 @@ d only for display.
     timeout: 60000,
     attestationType: 'none',
     /**
-     * Passing in a user's list of already-registered credential IDs here preven
-ts users from
-     * registering the same authenticator multiple times. The authenticator will
- simply throw an
-     * error in the browser if it's asked to perform registration when it recogn
-izes one of the
+     * Passing in a user's list of already-registered credential IDs here prevents users from
+     * registering the same authenticator multiple times. The authenticator will simply throw an
+     * error in the browser if it's asked to perform registration when it recognizes one of the
      * credential ID's.
      */
     excludeCredentials: credentials.map((cred) => ({
@@ -157,8 +133,7 @@ izes one of the
       /**
        * Wondering why user verification isn't required? See here:
        *
-       * https://passkeys.dev/docs/use-cases/bootstrapping/#a-note-about-user-ve
-rification
+       * https://passkeys.dev/docs/use-cases/bootstrapping/#a-note-about-user-verification
        */
       userVerification: 'preferred',
     },
@@ -171,8 +146,7 @@ rification
   const options = await generateRegistrationOptions(opts);
 
   /**
-   * The server needs to temporarily remember this value for verification, so do
-n't lose it until
+   * The server needs to temporarily remember this value for verification, so don't lose it until
    * after you verify the registration response.
    */
   req.session.currentChallenge = options.challenge;
@@ -208,8 +182,7 @@ app.post('/verify-registration', async (req, res) => {
   if (verified && registrationInfo) {
     const { credential } = registrationInfo;
 
-    const existingCredential = user.credentials.find((cred) => cred.id === crede
-ntial.id);
+    const existingCredential = user.credentials.find((cred) => cred.id === credential.id);
 
     if (!existingCredential) {
       /**
@@ -247,8 +220,7 @@ app.get('/generate-authentication-options', async (req, res) => {
     /**
      * Wondering why user verification isn't required? See here:
      *
-     * https://passkeys.dev/docs/use-cases/bootstrapping/#a-note-about-user-veri
-fication
+     * https://passkeys.dev/docs/use-cases/bootstrapping/#a-note-about-user-verification
      */
     userVerification: 'preferred',
     rpID,
@@ -308,8 +280,7 @@ app.post('/verify-authentication', async (req, res) => {
   const { verified, authenticationInfo } = verification;
 
   if (verified) {
-    // Update the credential's counter in the DB to the newest count in the auth
-entication
+    // Update the credential's counter in the DB to the newest count in the authentication
     dbCredential.counter = authenticationInfo.newCounter;
   }
 
