@@ -90,6 +90,7 @@ export let expectedOrigin = '';
  */
 const loggedInUserId = 'internalUserId';
 
+const rpID = 'localhost';
 const inMemoryUserDB: { [loggedInUserId: string]: LoggedInUser } = {
   [loggedInUserId]: {
     id: loggedInUserId,
