@@ -17,19 +17,19 @@ dotenv.config();
 
 import {
   generateAuthenticationOptions,
-  GenerateAuthenticationOptionsOpts,
   generateRegistrationOptions,
-  GenerateRegistrationOptionsOpts,
-  VerifiedAuthenticationResponse,
-  VerifiedRegistrationResponse,
   verifyAuthenticationResponse,
-  VerifyAuthenticationResponseOpts,
   verifyRegistrationResponse,
-  VerifyRegistrationResponseOpts,
 } from '@simplewebauthn/server';
 import type {
   AuthenticationResponseJSON,
+  GenerateAuthenticationOptionsOpts,
+  GenerateRegistrationOptionsOpts,
   RegistrationResponseJSON,
+  VerifiedAuthenticationResponse,
+  VerifiedRegistrationResponse,
+  VerifyAuthenticationResponseOpts,
+  VerifyRegistrationResponseOpts,
   WebAuthnCredential,
 } from '@simplewebauthn/server/types';
 
