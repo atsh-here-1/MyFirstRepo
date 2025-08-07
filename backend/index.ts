@@ -16,22 +16,22 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import {
-  AuthenticationResponseJSON,
-  // Authentication
   generateAuthenticationOptions,
   GenerateAuthenticationOptionsOpts,
-  // Registration
   generateRegistrationOptions,
   GenerateRegistrationOptionsOpts,
-  RegistrationResponseJSON,
   VerifiedAuthenticationResponse,
   VerifiedRegistrationResponse,
   verifyAuthenticationResponse,
   VerifyAuthenticationResponseOpts,
   verifyRegistrationResponse,
   VerifyRegistrationResponseOpts,
-  WebAuthnCredential,
 } from '@simplewebauthn/server';
+import type {
+  AuthenticationResponseJSON,
+  RegistrationResponseJSON,
+  WebAuthnCredential,
+} from '@simplewebauthn/server/types';
 
 interface LoggedInUser {
   id: string;
