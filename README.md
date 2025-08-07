@@ -4,25 +4,7 @@ This project demonstrates a cyberpunk-themed login interface with support for pa
 
 ## Setup
 
-### Frontend
-
-To run the frontend, you need to start the frontend server.
-
-1.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-2.  **Run the server:**
-    ```bash
-    node server.js
-    ```
-
-    The frontend will be available at `http://localhost:3000`.
-
-### Backend
-
-A local backend server is required for the passkey authentication to work. The backend is located in the `backend` directory.
+To run this project, you need to run the backend server, which also serves the frontend.
 
 1.  **Navigate to the backend directory:**
     ```bash

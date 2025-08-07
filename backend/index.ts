@@ -50,7 +50,7 @@ const {
 } = process.env;
 
 app.use(cors());
-app.use(express.static('./public/'));
+app.use(express.static('../'));
 app.use(express.json());
 app.use(
   session({
@@ -318,7 +318,7 @@ cert
 } else {
   const host = '127.0.0.1';
   const port = 8000;
-  expectedOrigin = `http://localhost:3000`;
+  expectedOrigin = `http://localhost:${port}`;
 
   http.createServer(app).listen(port, host, () => {
     console.log(`🚀 Server ready at ${expectedOrigin} (${host}:${port})`);
