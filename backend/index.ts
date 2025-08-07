@@ -77,7 +77,6 @@ declare module 'express-session' {
  * RP ID represents the "scope" of websites on which a credential should be usable. The Origin
  * represents the expected URL from which registration or authentication occurs.
  */
-export const rpID = RP_ID;
 // This value is set at the bottom of page as part of server initialization
 export let expectedOrigin = '';
 
@@ -113,6 +112,7 @@ app.get('/generate-registration-options', async (req, res) => {
     credentials,
   } = user;
 
+  const rpID = req.hostname;
   const opts: GenerateRegistrationOptionsOpts = {
     rpName: 'SimpleWebAuthn Example',
     rpID,
@@ -165,6 +165,7 @@ app.post('/verify-registration', async (req, res) => {
 
   let verification: VerifiedRegistrationResponse;
   try {
+    const rpID = req.hostname;
     const opts: VerifyRegistrationResponseOpts = {
       response: body,
       expectedChallenge: `${expectedChallenge}`,
@@ -212,6 +213,7 @@ app.get('/generate-authentication-options', async (req, res) => {
   // You need to know the user by this point
   const user = inMemoryUserDB[loggedInUserId];
 
+  const rpID = req.hostname;
   const opts: GenerateAuthenticationOptionsOpts = {
     timeout: 60000,
     allowCredentials: user.credentials.map((cred) => ({
@@ -264,6 +266,7 @@ app.post('/verify-authentication', async (req, res) => {
 
   let verification: VerifiedAuthenticationResponse;
   try {
+    const rpID = req.hostname;
     const opts: VerifyAuthenticationResponseOpts = {
       response: body,
       expectedChallenge: `${expectedChallenge}`,
