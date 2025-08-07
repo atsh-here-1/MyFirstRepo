@@ -11,6 +11,7 @@ import fs from 'fs';
 import express from 'express';
 import session from 'express-session';
 import memoryStore from 'memorystore';
+import cors from 'cors';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -48,6 +49,7 @@ const {
   RP_ID = 'localhost',
 } = process.env;
 
+app.use(cors());
 app.use(express.static('./public/'));
 app.use(express.json());
 app.use(
