@@ -1,6 +1,14 @@
 # Cyberpunk Login with Passkey
 
-This project demonstrates a cyberpunk-themed login interface with support for passkey authentication.
+This project demonstrates a cyberpunk-themed login interface with support for user registration, passkey authentication, and Google login.
+
+## Features
+
+-   User registration with Name, DOB, Email, and Password.
+-   Secure password hashing with `bcrypt`.
+-   Passkey registration and login associated with user accounts.
+-   Google login integration (Firebase).
+-   Cyberpunk-themed UI.
 
 ## Project Structure
 

@@ -10,6 +10,7 @@ import fs from 'fs';
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
+import bcrypt from 'bcrypt';
 
 import {
   generateAuthenticationOptions,
@@ -30,6 +31,8 @@ import {
 interface LoggedInUser {
   id: string;
   username: string;
+  dob: string;
+  password?: string;
   credentials: WebAuthnCredential[];
 }
 
@@ -71,22 +74,18 @@ let expectedOrigin = '';
  *
  * Here, the example server assumes the following user has completed login:
  */
-const loggedInUserId = 'internalUserId';
-
-const rpID = 'localhost';
-const inMemoryUserDB: { [loggedInUserId: string]: LoggedInUser } = {
-  [loggedInUserId]: {
-    id: loggedInUserId,
-    username: `user@${rpID}`,
-    credentials: [],
-  },
-};
+const inMemoryUserDB = new Map<string, LoggedInUser>();
 
 /**
  * Registration (a.k.a. "Registration")
  */
-app.get('/generate-registration-options', async (req: Request, res: Response) => {
-  const user = inMemoryUserDB[loggedInUserId];
+app.post('/generate-registration-options', async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const user = inMemoryUserDB.get(email);
+
+  if (!user) {
+    return res.status(404).send({ error: 'User not found' });
+  }
 
   const {
     /**
@@ -137,9 +136,12 @@ app.get('/generate-registration-options', async (req: Request, res: Response) =>
 app.post('/verify-registration', async (req: Request, res: Response) => {
   const body: RegistrationRequestBody = req.body;
 
-  const user = inMemoryUserDB[loggedInUserId];
+  const { email, challenge } = body;
+  const user = inMemoryUserDB.get(email);
 
-  const { challenge } = body;
+  if (!user) {
+    return res.status(404).send({ error: 'User not found' });
+  }
 
   let verification: VerifiedRegistrationResponse;
   try {
@@ -185,9 +187,13 @@ app.post('/verify-registration', async (req: Request, res: Response) => {
 /**
  * Login (a.k.a. "Authentication")
  */
-app.get('/generate-authentication-options', async (req: Request, res: Response) => {
-  // You need to know the user by this point
-  const user = inMemoryUserDB[loggedInUserId];
+app.post('/generate-authentication-options', async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const user = inMemoryUserDB.get(email);
+
+  if (!user) {
+    return res.status(404).send({ error: 'User not found' });
+  }
 
   const rpID = process.env.RP_ID || req.hostname;
   const opts: GenerateAuthenticationOptionsOpts = {
@@ -214,9 +220,12 @@ app.get('/generate-authentication-options', async (req: Request, res: Response) 
 app.post('/verify-authentication', async (req: Request, res: Response) => {
   const body: AuthenticationRequestBody = req.body;
 
-  const user = inMemoryUserDB[loggedInUserId];
+  const { email, challenge } = body;
+  const user = inMemoryUserDB.get(email);
 
-  const { challenge } = body;
+  if (!user) {
+    return res.status(404).send({ error: 'User not found' });
+  }
 
   let dbCredential: WebAuthnCredential | undefined;
   // "Query the DB" here for a credential matching `cred.id`
@@ -259,6 +268,29 @@ app.post('/verify-authentication', async (req: Request, res: Response) => {
   }
 
   res.send({ verified });
+});
+
+app.post('/register', async (req: Request, res: Response) => {
+  const { name, dob, email, password } = req.body;
+
+  if (inMemoryUserDB.has(email)) {
+    return res.status(400).send({ error: 'User already exists' });
+  }
+
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+  const newUser: LoggedInUser = {
+    id: email,
+    username: name,
+    dob,
+    password: hashedPassword,
+    credentials: [],
+  };
+
+  inMemoryUserDB.set(email, newUser);
+
+  res.send({ success: true, user: newUser });
 });
 
 if (ENABLE_HTTPS) {

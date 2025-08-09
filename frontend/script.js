@@ -69,10 +69,16 @@ function addButtonEffects() {
 }
 
 // 🔐 Register with Passkey
-async function registerPasskey() {
+async function registerPasskey(email) {
   try {
     console.log("[Client] 🔍 Fetching challenge...");
-    const challengeResp = await fetch(`${BACKEND_URL}/generate-registration-options`);
+    const challengeResp = await fetch(`${BACKEND_URL}/generate-registration-options`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
 
     if (!challengeResp.ok) {
       const errorText = await challengeResp.text();
@@ -94,7 +100,7 @@ async function registerPasskey() {
     const verifyResp = await fetch(`${BACKEND_URL}/verify-registration`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...attResp, challenge }),
+      body: JSON.stringify({ ...attResp, challenge, email }),
     });
 
     const result = await verifyResp.json();
@@ -109,9 +115,18 @@ async function registerPasskey() {
 
 // 🔓 Login with Passkey
 async function loginWithPasskey() {
+  const email = prompt("👤 Enter your email to login with passkey:");
+  if (!email) return;
+
   try {
     console.log("[Client] 🔐 Requesting login challenge...");
-    const challengeResp = await fetch(`${BACKEND_URL}/generate-authentication-options`);
+    const challengeResp = await fetch(`${BACKEND_URL}/generate-authentication-options`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
 
     if (!challengeResp.ok) throw new Error(await challengeResp.text());
     const options = await challengeResp.json();
@@ -125,7 +140,7 @@ async function loginWithPasskey() {
     const verifyResp = await fetch(`${BACKEND_URL}/verify-authentication`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...authResp, challenge }),
+      body: JSON.stringify({ ...authResp, challenge, email }),
     });
 
     const result = await verifyResp.json();
