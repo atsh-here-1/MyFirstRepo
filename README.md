@@ -62,7 +62,7 @@ To run this project locally, you will need to run the frontend and backend serve
 ### Backend on Render
 
 1.  Create a new "Web Service" on Render and connect it to your GitHub repository.
-2.  Set the "Build Command" to `npm install`.
+2.  Set the "Build Command" to `npm install && npm run build`.
 3.  Set the "Start Command" to `npm start`.
 4.  Add the following environment variables:
     -   `PORT`: `10000` (Render's default port)
