@@ -1,3 +1,3 @@
 window.config = {
-  backendUrl: 'https://passkey-auth-backend.onrender.com'
+  backendUrl: 'https://backend-xxf7.onrender.com'
 };
