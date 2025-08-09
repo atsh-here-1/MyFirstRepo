@@ -200,9 +200,17 @@ window.registerPasskey = registerPasskey;
 window.loginWithPasskey = loginWithPasskey;
 
 // ⚙️ On Load
+function initializeAuth() {
+  if (window.firebase) {
+    handleAuth();
+  } else {
+    setTimeout(initializeAuth, 100);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("🎮 script.js ready");
   createParticles();
   addButtonEffects();
-  handleAuth();
+  initializeAuth();
 });
