@@ -33,6 +33,14 @@ interface LoggedInUser {
   credentials: WebAuthnCredential[];
 }
 
+interface RegistrationRequestBody extends RegistrationResponseJSON {
+  challenge: string;
+}
+
+interface AuthenticationRequestBody extends AuthenticationResponseJSON {
+  challenge: string;
+}
+
 const app = express();
 app.set('trust proxy', 1);
 
@@ -127,7 +135,7 @@ app.get('/generate-registration-options', async (req: Request, res: Response) =>
 });
 
 app.post('/verify-registration', async (req: Request, res: Response) => {
-  const body: RegistrationResponseJSON = req.body;
+  const body: RegistrationRequestBody = req.body;
 
   const user = inMemoryUserDB[loggedInUserId];
 
@@ -204,7 +212,7 @@ app.get('/generate-authentication-options', async (req: Request, res: Response) 
 });
 
 app.post('/verify-authentication', async (req: Request, res: Response) => {
-  const body: AuthenticationResponseJSON = req.body;
+  const body: AuthenticationRequestBody = req.body;
 
   const user = inMemoryUserDB[loggedInUserId];
 
