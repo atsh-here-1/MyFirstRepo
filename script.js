@@ -84,6 +84,8 @@ async function registerPasskey() {
 
     if (!options.challenge) throw new Error("Challenge missing from server");
 
+    const challenge = options.challenge;
+
     console.log("[Client] 🧠 Starting browser registration...");
     const attResp = await startRegistration(options);
     console.log("[Client] ✅ Attestation response:", attResp);
@@ -92,7 +94,7 @@ async function registerPasskey() {
     const verifyResp = await fetch(`${BACKEND_URL}/verify-registration`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(attResp),
+      body: JSON.stringify({ ...attResp, challenge }),
     });
 
     const result = await verifyResp.json();
@@ -115,13 +117,15 @@ async function loginWithPasskey() {
     const options = await challengeResp.json();
     console.log("[Client] 🔄 Challenge received:", options);
 
+    const challenge = options.challenge;
+
     const authResp = await startAuthentication(options);
     console.log("[Client] ✅ Authentication response:", authResp);
 
     const verifyResp = await fetch(`${BACKEND_URL}/verify-authentication`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(authResp),
+      body: JSON.stringify({ ...authResp, challenge }),
     });
 
     const result = await verifyResp.json();
