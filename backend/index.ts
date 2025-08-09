@@ -38,10 +38,12 @@ interface LoggedInUser {
 
 interface RegistrationRequestBody extends RegistrationResponseJSON {
   challenge: string;
+  email: string;
 }
 
 interface AuthenticationRequestBody extends AuthenticationResponseJSON {
   challenge: string;
+  email: string;
 }
 
 const app = express();
@@ -296,7 +298,7 @@ app.post('/register', async (req: Request, res: Response) => {
 if (ENABLE_HTTPS) {
   const host = '0.0.0.0';
   const port = 443;
-  expectedOrigin = `https://${rpID}`;
+  expectedOrigin = `https://${process.env.RP_ID}`;
 
   https
     .createServer(
@@ -305,8 +307,8 @@ if (ENABLE_HTTPS) {
          * See the README on how to generate this SSL cert and key pair using mk
 cert
          */
-        key: fs.readFileSync(`./${rpID}.key`),
-        cert: fs.readFileSync(`./${rpID}.crt`),
+        key: fs.readFileSync(`./${process.env.RP_ID}.key`),
+        cert: fs.readFileSync(`./${process.env.RP_ID}.crt`),
       },
       app,
     )
