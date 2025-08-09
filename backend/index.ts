@@ -50,7 +50,6 @@ const {
 } = process.env;
 
 app.use(cors());
-app.use(express.static('../'));
 app.use(express.json());
 app.use(
   session({
@@ -113,7 +112,7 @@ app.get('/generate-registration-options', async (req, res) => {
     credentials,
   } = user;
 
-  const rpID = req.hostname;
+  const rpID = process.env.RP_ID || req.hostname;
   const opts: GenerateRegistrationOptionsOpts = {
     rpName: 'SimpleWebAuthn Example',
     rpID,
@@ -166,7 +165,7 @@ app.post('/verify-registration', async (req, res) => {
 
   let verification: VerifiedRegistrationResponse;
   try {
-    const rpID = req.hostname;
+    const rpID = process.env.RP_ID || req.hostname;
     const opts: VerifyRegistrationResponseOpts = {
       response: body,
       expectedChallenge: `${expectedChallenge}`,
@@ -214,7 +213,7 @@ app.get('/generate-authentication-options', async (req, res) => {
   // You need to know the user by this point
   const user = inMemoryUserDB[loggedInUserId];
 
-  const rpID = req.hostname;
+  const rpID = process.env.RP_ID || req.hostname;
   const opts: GenerateAuthenticationOptionsOpts = {
     timeout: 60000,
     allowCredentials: user.credentials.map((cred) => ({
@@ -267,7 +266,7 @@ app.post('/verify-authentication', async (req, res) => {
 
   let verification: VerifiedAuthenticationResponse;
   try {
-    const rpID = req.hostname;
+    const rpID = process.env.RP_ID || req.hostname;
     const opts: VerifyAuthenticationResponseOpts = {
       response: body,
       expectedChallenge: `${expectedChallenge}`,
@@ -317,8 +316,8 @@ cert
     });
 } else {
   const host = '127.0.0.1';
-  const port = 8000;
-  expectedOrigin = `http://localhost:${port}`;
+  const port = process.env.PORT || 8000;
+  expectedOrigin = process.env.EXPECTED_ORIGIN || `http://localhost:${port}`;
 
   http.createServer(app).listen(port, host, () => {
     console.log(`🚀 Server ready at ${expectedOrigin} (${host}:${port})`);

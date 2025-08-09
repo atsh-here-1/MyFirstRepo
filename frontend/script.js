@@ -1,7 +1,7 @@
 // ✅ Passkey Client Script (script.js)
 
 const { startRegistration, startAuthentication } = SimpleWebAuthnBrowser;
-const BACKEND_URL = "http://localhost:8000";
+const BACKEND_URL = window.config.backendUrl;
 
 // 🌟 Particle Background
 function createParticles() {
