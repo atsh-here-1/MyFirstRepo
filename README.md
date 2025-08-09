@@ -15,7 +15,7 @@ To run this project locally, you will need to run the frontend and backend serve
 
 ### Backend
 
-The backend is a TypeScript project. A `tsconfig.json` file is included to configure the compiler.
+The backend is a TypeScript project. A `tsconfig.json` file is included to configure the compiler. The `dotenv` package is used for local development to load environment variables from a `.env` file, and it is conditionally loaded to not affect the production build.
 
 1.  **Navigate to the backend directory:**
     ```bash
