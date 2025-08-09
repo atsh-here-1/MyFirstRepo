@@ -1,7 +1,5 @@
 // ✅ Passkey Client Script (script.js)
 
-const { startRegistration, startAuthentication } = SimpleWebAuthnBrowser;
-
 // 🌟 Particle Background
 function createParticles() {
   const container = document.getElementById("particles");
@@ -69,6 +67,7 @@ function addButtonEffects() {
 
 // 🔐 Register with Passkey
 async function registerPasskey(email) {
+  const { startRegistration } = SimpleWebAuthnBrowser;
   const BACKEND_URL = window.config.backendUrl;
   try {
     console.log("[Client] 🔍 Fetching challenge...");
@@ -115,6 +114,7 @@ async function registerPasskey(email) {
 
 // 🔓 Login with Passkey
 async function loginWithPasskey() {
+  const { startAuthentication } = SimpleWebAuthnBrowser;
   const BACKEND_URL = window.config.backendUrl;
   const email = prompt("👤 Enter your email to login with passkey:");
   if (!email) return;
