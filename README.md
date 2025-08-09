@@ -15,7 +15,7 @@ To run this project locally, you will need to run the frontend and backend serve
 
 ### Backend
 
-The backend is a TypeScript project. A `tsconfig.json` file is included to configure the compiler.
+The backend is a TypeScript project. A `tsconfig.json` file is included to configure the compiler. It uses `express-session` for session management and `cors` to handle cross-origin requests from the frontend.
 
 1.  **Navigate to the backend directory:**
     ```bash
