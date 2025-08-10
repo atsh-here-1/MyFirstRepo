@@ -8,6 +8,8 @@ import {
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
 import { isoUint8Array } from '@simplewebauthn/server/helpers';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -32,6 +34,18 @@ app.use(session({
   saveUninitialized: true,
   cookie: { maxAge: 3600000 }
 }));
+
+// Set up __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve the landing page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 function getUser(username) {
   if (!users.has(username)) {
